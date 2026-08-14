@@ -1,0 +1,42 @@
+name: museq
+options:
+  bundleIdPrefix: com.mitsuba
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: NO
+targets:
+  museq:
+    type: application
+    platform: macOS
+    sources:
+      - museq
+    info:
+      path: museq/Info.plist
+      properties:
+        CFBundleDisplayName: museq
+        LSUIElement: true
+        NSAudioCaptureUsageDescription: museq captures Music.app's audio output to apply the parametric EQ you configure.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mitsuba.museq
+        ENABLE_APP_SANDBOX: NO
+    scheme:
+      testTargets:
+        - museqTests
+  museqTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - museqTests
+    dependencies:
+      - target: museq
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/museq.app/Contents/MacOS/museq
+        BUNDLE_LOADER: $(TEST_HOST)
