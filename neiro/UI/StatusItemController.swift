@@ -139,6 +139,7 @@ final class StatusMarqueeView: NSView {
     private let suffixLabel = NSTextField(labelWithString: "")
     private var titleWidth: CGFloat = 0
     private var loopWidth: CGFloat = 0
+    private var labelFullSize: NSSize = .zero
     private var currentTitle = ""
     private var currentSuffix = ""
 
@@ -165,6 +166,12 @@ final class StatusMarqueeView: NSView {
         titleLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
         titleLabel.lineBreakMode = .byClipping
         suffixLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
+        // Frames are managed manually in layout(); autoresizing would drag
+        // the label's width along with the clip view, truncating the doubled
+        // marquee string to the window width.
+        titleClipView.autoresizingMask = []
+        titleLabel.autoresizingMask = []
+        suffixLabel.autoresizingMask = []
         addSubview(iconView)
         titleClipView.addSubview(titleLabel)
         addSubview(titleClipView)
@@ -222,6 +229,7 @@ final class StatusMarqueeView: NSView {
         } else {
             loopWidth = 0
         }
+        labelFullSize = titleLabel.frame.size
 
         suffixLabel.stringValue = suffix
         suffixLabel.sizeToFit()
@@ -240,10 +248,11 @@ final class StatusMarqueeView: NSView {
         if !currentTitle.isEmpty {
             x += Self.gap
             let clipWidth = min(titleWidth, Self.titleMaxWidth)
-            let labelSize = titleLabel.frame.size
-            titleClipView.frame = NSRect(x: x, y: (height - labelSize.height) / 2,
-                                         width: clipWidth, height: labelSize.height)
-            titleLabel.frame = NSRect(origin: .zero, size: labelSize)
+            titleClipView.frame = NSRect(x: x, y: (height - labelFullSize.height) / 2,
+                                         width: clipWidth, height: labelFullSize.height)
+            // Always the full measured size — never re-read the live frame,
+            // which the clip view's resize may have squeezed.
+            titleLabel.frame = NSRect(origin: .zero, size: labelFullSize)
             x += clipWidth
         }
         if !currentSuffix.isEmpty {
