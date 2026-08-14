@@ -30,6 +30,9 @@ final class AppState {
     private(set) var engineSampleRate: Double = 44_100
     private(set) var trackBitDepth: Int?
     private(set) var userPresets: [EQPreset] = PresetStore.load()
+    private(set) var nowPlayingTitle: String?
+    private(set) var nowPlayingArtist: String?
+    private(set) var nowPlayingArtwork: NSImage?
 
     /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
     /// the menu bar next to the icon and in the status row.
@@ -57,6 +60,8 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
+    @ObservationIgnored private var nowPlayingTask: Task<Void, Never>?
+    @ObservationIgnored private var nowPlayingObserver: NSObjectProtocol?
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
 
     init() {
@@ -71,6 +76,7 @@ final class AppState {
 
         deviceMonitor.onChange = { [weak self] in self?.handleDeviceListChange() }
         applyLaunchAtLogin()
+        observeNowPlaying()
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
         rateDetector.onBitDepthDetected = { [weak self] rate, depth in
             guard let self else { return }
@@ -353,6 +359,50 @@ final class AppState {
                     return
                 }
             }
+        }
+    }
+
+    // MARK: - Now playing
+
+    /// Music broadcasts com.apple.Music.playerInfo on every play/pause/track
+    /// change with title/artist in the payload; artwork needs an AppleScript
+    /// round-trip, so refreshes are debounced.
+    private func observeNowPlaying() {
+        nowPlayingObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.apple.Music.playerInfo"),
+            object: nil, queue: .main
+        ) { [weak self] note in
+            let title = note.userInfo?["Name"] as? String
+            let artist = note.userInfo?["Artist"] as? String
+            Task { @MainActor [weak self] in
+                self?.nowPlayingTitle = title
+                self?.nowPlayingArtist = artist
+                self?.refreshNowPlaying(havePayloadTitle: title != nil)
+            }
+        }
+        refreshNowPlaying(havePayloadTitle: false)
+    }
+
+    private func refreshNowPlaying(havePayloadTitle: Bool) {
+        nowPlayingTask?.cancel()
+        nowPlayingTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled, let self else { return }
+            let artworkPath = NSTemporaryDirectory() + "neiro-artwork"
+            let result = await Task.detached {
+                let info = MusicRemote.nowPlaying()
+                let hasArtwork = info != nil && MusicRemote.saveArtwork(to: artworkPath)
+                return (info, hasArtwork)
+            }.value
+            guard !Task.isCancelled else { return }
+            if let info = result.0 {
+                self.nowPlayingTitle = info.title
+                self.nowPlayingArtist = info.artist
+            } else if !havePayloadTitle {
+                self.nowPlayingTitle = nil
+                self.nowPlayingArtist = nil
+            }
+            self.nowPlayingArtwork = result.1 ? NSImage(contentsOfFile: artworkPath) : nil
         }
     }
 

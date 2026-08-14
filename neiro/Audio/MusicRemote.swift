@@ -26,6 +26,33 @@ enum MusicRemote {
         run("tell application \"Music\" to set player position to \(seconds)")
     }
 
+    /// Title and artist of the current track, nil when nothing is loaded.
+    static func nowPlaying() -> (title: String, artist: String)? {
+        let script = """
+        tell application "Music" to get (name of current track) & "\\n" & (artist of current track)
+        """
+        guard let output = run(script), !output.isEmpty else { return nil }
+        let lines = output.components(separatedBy: "\n")
+        guard let title = lines.first, !title.isEmpty else { return nil }
+        return (title, lines.count > 1 ? lines[1] : "")
+    }
+
+    /// Writes the current track's artwork (original bytes, usually JPEG/PNG)
+    /// to `path`. Returns false when there is no track/artwork.
+    @discardableResult
+    static func saveArtwork(to path: String) -> Bool {
+        let script = """
+        tell application "Music"
+        \tset artworkData to raw data of artwork 1 of current track
+        end tell
+        set outFile to open for access POSIX file "\(path)" with write permission
+        set eof outFile to 0
+        write artworkData to outFile
+        close access outFile
+        """
+        return run(script, timeout: 5) != nil
+    }
+
     /// osascript can block indefinitely — most notably while the Automation
     /// consent dialog is unanswered, or when Music stops servicing Apple
     /// Events. A hard timeout keeps the rate-switch pipeline from hanging;

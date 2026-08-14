@@ -19,6 +19,37 @@ struct MenuBarRootView: View {
                     .foregroundStyle(statusColor)
             }
 
+            if let title = appState.nowPlayingTitle {
+                HStack(spacing: 10) {
+                    Group {
+                        if let artwork = appState.nowPlayingArtwork {
+                            Image(nsImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            Image(systemName: "music.note")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(.quaternary.opacity(0.5))
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.caption.bold())
+                            .lineLimit(1)
+                        if let artist = appState.nowPlayingArtist, !artist.isEmpty {
+                            Text(artist)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer()
+                }
+            }
+
             if case .error = appState.status {
                 Button("Open Privacy Settings") {
                     let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture"
