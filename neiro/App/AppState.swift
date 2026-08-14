@@ -72,7 +72,7 @@ final class AppState {
                 while offset < maxOffset, !Task.isCancelled {
                     offset += 1
                     self?.marqueeOffset = offset
-                    try? await Task.sleep(for: .milliseconds(300))
+                    try? await Task.sleep(for: .milliseconds(150))
                 }
                 guard !Task.isCancelled else { return }
                 try? await Task.sleep(for: .seconds(1))
