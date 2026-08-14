@@ -1,0 +1,54 @@
+# neiro CI — build & unit tests on a hosted macOS agent.
+# Signing is disabled on CI (no certificates on the runner); the Release
+# artifact is an unsigned .app for inspection, not for distribution.
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: macOS-latest
+
+steps:
+  - script: |
+      sw_vers
+      xcodebuild -version
+    displayName: Toolchain info
+
+  - script: brew install xcodegen
+    displayName: Install XcodeGen
+
+  - script: xcodegen generate
+    displayName: Generate Xcode project
+
+  - script: >
+      xcodebuild
+      -project neiro.xcodeproj
+      -scheme neiro
+      -configuration Debug
+      -derivedDataPath build
+      CODE_SIGNING_ALLOWED=NO
+      test
+    displayName: Unit tests (Debug)
+
+  - script: >
+      xcodebuild
+      -project neiro.xcodeproj
+      -scheme neiro
+      -configuration Release
+      -derivedDataPath build
+      CODE_SIGNING_ALLOWED=NO
+      build
+    displayName: Build (Release, unsigned)
+
+  - script: |
+      cd build/Build/Products/Release
+      zip -r $(Build.ArtifactStagingDirectory)/neiro-unsigned.zip neiro.app
+    displayName: Zip Release app
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)
+      ArtifactName: neiro-app
+    displayName: Publish artifact
