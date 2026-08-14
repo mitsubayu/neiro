@@ -62,6 +62,22 @@ struct BiquadTests {
         #expect(abs(buffer[4] + 0.5) < 0.01)
     }
 
+    @Test func trackRateParsing() {
+        let real = "<<<< FAQ >>>> subaq_buildCAAudioQueue: [0xaf0671f80:0xafc62f480] RP/DO.07 Creating AudioQueue with format:'qlac', framesPerPacket:4096, sampleRate:96000, releasePlayResourceForFormatChange:1 notificationToken: 84dac35f6"
+        #expect(TrackRateDetector.parseSampleRate(fromEventMessage: real) == 96000)
+        #expect(TrackRateDetector.parseSampleRate(fromEventMessage: "sampleRate:44100,") == 44100)
+        #expect(TrackRateDetector.parseSampleRate(fromEventMessage: "no rate here") == nil)
+        #expect(TrackRateDetector.parseSampleRate(fromEventMessage: "sampleRate:1") == nil)
+    }
+
+    @Test func settingsDecodeWithoutNewerKeys() throws {
+        let legacy = #"{"isEnabled":true,"preGainDB":-3}"#
+        let settings = try JSONDecoder().decode(EQSettings.self, from: Data(legacy.utf8))
+        #expect(settings.isEnabled)
+        #expect(settings.followTrackRate)
+        #expect(!settings.bands.isEmpty)
+    }
+
     @Test func nyquistClampKeepsHighBandsStable() {
         // A 16 kHz shelf at a 32 kHz device rate would sit above Nyquist
         // without the clamp in BiquadCoefficients.make.

@@ -44,6 +44,9 @@ final class AppState {
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var musicWaitTask: Task<Void, Never>?
     @ObservationIgnored private var activeOutputUID: String?
+    @ObservationIgnored private let rateDetector = TrackRateDetector()
+    @ObservationIgnored private var lastTrackRate: Double?
+    @ObservationIgnored private var isSwitchingRate = false
 
     init() {
         let loaded = SettingsStore.load()
@@ -56,7 +59,9 @@ final class AppState {
         }
 
         deviceMonitor.onChange = { [weak self] in self?.handleDeviceListChange() }
+        rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
         observeMusicLifecycle()
+        updateRateDetectorState()
 
         if settings.isEnabled {
             startEngine()
@@ -68,6 +73,7 @@ final class AppState {
     private func handleSettingsChange(oldValue: EQSettings) {
         processor.update(settings: settings)
         scheduleSave()
+        updateRateDetectorState()
 
         if oldValue.isEnabled != settings.isEnabled {
             settings.isEnabled ? startEngine() : stopEngine()
@@ -96,7 +102,7 @@ final class AppState {
         return OutputDeviceMonitor.currentDefaultOutput()?.uid
     }
 
-    private func startEngine() {
+    private func startEngine(resumePlaybackAfterStart: Bool = false) {
         musicWaitTask?.cancel()
 
         guard let musicProcess = MusicProcessLocator.musicProcessObjectID() else {
@@ -110,10 +116,12 @@ final class AppState {
         }
 
         activeOutputUID = outputUID
+        let preferredRate = settings.followTrackRate ? lastTrackRate : nil
         let engine = self.engine
         engine.controlQueue.async { [weak self] in
             do {
-                try engine.start(musicProcess: musicProcess, outputDeviceUID: outputUID)
+                try engine.start(musicProcess: musicProcess, outputDeviceUID: outputUID,
+                                 preferredRate: preferredRate)
                 let rate = engine.sampleRate
                 Task { @MainActor [weak self] in
                     self?.status = .running
@@ -125,6 +133,42 @@ final class AppState {
                     self?.activeOutputUID = nil
                 }
             }
+        }
+        if resumePlaybackAfterStart {
+            // Serial queue: runs after the start block above has finished.
+            engine.controlQueue.async { [weak self] in
+                usleep(300_000)
+                MusicRemote.play()
+                Task { @MainActor [weak self] in self?.isSwitchingRate = false }
+            }
+        }
+    }
+
+    // MARK: - Track-rate following
+
+    private func updateRateDetectorState() {
+        if settings.isEnabled && settings.followTrackRate {
+            rateDetector.start()
+        } else {
+            rateDetector.stop()
+        }
+    }
+
+    /// Music logs the source rate when it builds a track's AudioQueue. If it
+    /// differs from the rate we're running at, do a controlled switch:
+    /// pause → retarget device rate + rebuild engine → resume. The pause keeps
+    /// the switch from audibly cutting out mid-track (the LosslessSwitcher
+    /// failure mode) — detection happens at the head of the track, and Music
+    /// re-creates its AudioQueue at the new device rate on resume.
+    private func handleDetectedTrackRate(_ rate: Double) {
+        lastTrackRate = rate
+        guard settings.isEnabled, settings.followTrackRate, status == .running,
+              !isSwitchingRate, rate != engineSampleRate else { return }
+        isSwitchingRate = true
+        Task { @MainActor [weak self] in
+            await Task.detached { MusicRemote.pause() }.value
+            guard let self else { return }
+            self.startEngine(resumePlaybackAfterStart: true)
         }
     }
 

@@ -22,6 +22,7 @@ targets:
         CFBundleDisplayName: museq
         LSUIElement: true
         NSAudioCaptureUsageDescription: museq captures Music.app's audio output to apply the parametric EQ you configure.
+        NSAppleEventsUsageDescription: museq briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mitsuba.museq

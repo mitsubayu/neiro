@@ -27,6 +27,12 @@ struct MenuBarRootView: View {
 
             OutputDevicePicker()
 
+            Toggle(isOn: $appState.settings.followTrackRate) {
+                Text("Follow track sample rate (bit-perfect)")
+                    .font(.caption)
+            }
+            .toggleStyle(.checkbox)
+
             ResponseCurveView(bands: appState.settings.bands,
                               preGainDB: appState.settings.preGainDB,
                               sampleRate: appState.engineSampleRate)

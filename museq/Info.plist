@@ -22,6 +22,8 @@
 	<string>1</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>museq briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>museq captures Music.app's audio output to apply the parametric EQ you configure.</string>
 </dict>

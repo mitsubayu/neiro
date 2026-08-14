@@ -43,7 +43,11 @@ final class ProcessTapEngine {
     /// Builds and starts the full chain. Throws CoreAudioError; a failure from
     /// AudioHardwareCreateProcessTap usually means the TCC audio-capture
     /// permission was denied.
-    func start(musicProcess: AudioObjectID, outputDeviceUID: String) throws {
+    ///
+    /// `preferredRate` overrides the tap's current rate as the device-rate
+    /// target — used when the track's source rate is known but Music is still
+    /// (or was last) rendering at the old device rate.
+    func start(musicProcess: AudioObjectID, outputDeviceUID: String, preferredRate: Double? = nil) throws {
         dispatchPrecondition(condition: .onQueue(controlQueue))
         stopLocked()
 
@@ -63,7 +67,7 @@ final class ProcessTapEngine {
         try? tapID.read(kAudioTapPropertyFormat, into: &tapFormat)
         Self.logger.info("tap format: rate=\(tapFormat.mSampleRate) channels=\(tapFormat.mChannelsPerFrame) flags=\(tapFormat.mFormatFlags)")
 
-        matchOutputDeviceRate(outputDeviceUID: outputDeviceUID, to: tapFormat.mSampleRate)
+        matchOutputDeviceRate(outputDeviceUID: outputDeviceUID, to: preferredRate ?? tapFormat.mSampleRate)
 
         let aggregateDescription: [String: Any] = [
             kAudioAggregateDeviceNameKey: "museq-aggregate",
