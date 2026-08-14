@@ -166,6 +166,11 @@ final class StatusMarqueeView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    // Real mouse clicks must fall through to the status bar button
+    // underneath (accessibility AXPress bypasses hit-testing, which is why
+    // synthetic click tests passed while physical clicks did nothing).
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
     var desiredWidth: CGFloat {
         Self.measureWidth(title: currentTitle, suffix: currentSuffix)
     }
