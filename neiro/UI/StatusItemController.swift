@@ -239,12 +239,16 @@ final class StatusMarqueeView: NSView {
     // synthetic click tests passed while physical clicks did nothing).
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
-    /// Title slot is a fixed width so the status item doesn't resize (and
-    /// shuffle the whole menu bar) on every track change.
+    /// Short titles get exactly their text width (no dead space before the
+    /// suffix); only titles long enough to marquee use the full 110pt slot.
+    private var titleSlotWidth: CGFloat {
+        min(titleWidth, Self.titleMaxWidth)
+    }
+
     var desiredWidth: CGFloat {
         var width = Self.iconWidth
         if !currentTitle.isEmpty {
-            width += Self.gap + Self.titleMaxWidth
+            width += Self.gap + titleSlotWidth
         }
         if !currentSuffix.isEmpty {
             width += Self.gap + suffixWidth
@@ -294,8 +298,8 @@ final class StatusMarqueeView: NSView {
             x += Self.gap
             // Integral-pixel origin: fractional offsets soften the glyphs.
             titleClipView.frame = NSRect(x: round(x), y: round((height - Self.lineHeight) / 2),
-                                         width: Self.titleMaxWidth, height: Self.lineHeight)
-            x += Self.titleMaxWidth
+                                         width: titleSlotWidth, height: Self.lineHeight)
+            x += titleSlotWidth
         }
         if !currentSuffix.isEmpty {
             x += Self.gap

@@ -89,6 +89,30 @@ struct BiquadTests {
         #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: "Input format:  2 ch,  96000 Hz, qlac") == nil)
     }
 
+    @MainActor
+    @Test func marqueeSlotWidthRules() {
+        let view = StatusMarqueeView()
+        let suffix = "· ALAC 44.1kHz/16bit"
+
+        view.update(title: "初恋", suffix: suffix)
+        let short = view.desiredWidth
+        view.update(title: "Howling over the World and the Moon", suffix: suffix)
+        let long1 = view.desiredWidth
+        view.update(title: "Howling over the World and the Moon and Beyond the Stars", suffix: suffix)
+        let long2 = view.desiredWidth
+
+        // Short titles take only their text width; anything long enough to
+        // marquee is capped at the fixed 110pt slot regardless of length.
+        #expect(short < long1)
+        #expect(long1 == long2)
+
+        view.update(title: "", suffix: suffix)
+        let noTitle = view.desiredWidth
+        #expect(noTitle < short)
+        view.update(title: "", suffix: "")
+        #expect(view.desiredWidth < noTitle)
+    }
+
     @Test func codecParsing() {
         let line = "<<<< FAQ >>>> subaq_buildCAAudioQueue: [0x9:0x9] RP/ZZ.25 Creating AudioQueue with format:'qlac', framesPerPacket:4096, sampleRate:48000, releasePlayResourceForFormatChange:1"
         #expect(TrackRateDetector.parseCodec(fromEventMessage: line) == "qlac")
