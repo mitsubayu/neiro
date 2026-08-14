@@ -13,6 +13,7 @@ final class StatusItemController: NSObject {
     private let appState: AppState
     private let statusItem: NSStatusItem
     private let marqueeView = StatusMarqueeView()
+    private var marqueeWidthConstraint: NSLayoutConstraint?
     private var outsideClickMonitor: Any?
 
     // NSPopover.show silently no-ops in this configuration (macOS 26,
@@ -32,6 +33,7 @@ final class StatusItemController: NSObject {
         panel.level = .popUpMenu
         panel.isMovable = false
         panel.hidesOnDeactivate = false
+        panel.appearance = nil  // inherit the system light/dark appearance
         return panel
     }()
 
@@ -45,11 +47,16 @@ final class StatusItemController: NSObject {
             button.action = #selector(togglePopover(_:))
             button.addSubview(marqueeView)
             marqueeView.translatesAutoresizingMaskIntoConstraints = false
+            // Self-contained size only: tying the marquee's height to the
+            // button's let Auto Layout squash the button itself to a 2pt
+            // strip, which made the status item practically unclickable.
+            let widthConstraint = marqueeView.widthAnchor.constraint(equalToConstant: 18)
+            marqueeWidthConstraint = widthConstraint
             NSLayoutConstraint.activate([
                 marqueeView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 6),
                 marqueeView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-                marqueeView.heightAnchor.constraint(equalTo: button.heightAnchor),
-                marqueeView.widthAnchor.constraint(equalToConstant: 18),
+                marqueeView.heightAnchor.constraint(equalToConstant: 22),
+                widthConstraint,
             ])
         }
         observeState()
@@ -105,10 +112,6 @@ final class StatusItemController: NSObject {
         }
     }
 
-    private var widthConstraint: NSLayoutConstraint? {
-        marqueeView.constraints.first { $0.firstAttribute == .width }
-    }
-
     private func refresh() {
         let running = appState.status == .running
         let title = running ? (appState.nowPlayingTitle ?? "") : ""
@@ -117,7 +120,7 @@ final class StatusItemController: NSObject {
             suffix = "· " + suffix
         }
         marqueeView.update(title: title, suffix: suffix)
-        widthConstraint?.constant = marqueeView.desiredWidth
+        marqueeWidthConstraint?.constant = marqueeView.desiredWidth
         statusItem.length = marqueeView.desiredWidth + 12
     }
 }
@@ -151,6 +154,11 @@ final class StatusMarqueeView: NSView {
         super.init(frame: .zero)
         iconView.image = NSImage(systemSymbolName: "slider.horizontal.3",
                                  accessibilityDescription: "neiro")
+        // Follow the menu bar's effective appearance (template symbols in a
+        // plain NSImageView don't auto-tint like a status button image).
+        iconView.contentTintColor = .labelColor
+        titleLabel.textColor = .labelColor
+        suffixLabel.textColor = .labelColor
         titleClipView.wantsLayer = true
         titleClipView.layer?.masksToBounds = true
         titleLabel.wantsLayer = true
