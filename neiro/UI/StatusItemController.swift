@@ -230,6 +230,8 @@ final class StatusMarqueeView: NSView {
             loopWidth = 0
         }
         labelFullSize = titleLabel.frame.size
+        Logger(subsystem: "com.mitsuba.neiro", category: "marquee")
+            .error("update: title=\(title, privacy: .public) titleWidth=\(self.titleWidth) loopWidth=\(self.loopWidth) labelFull=\(self.labelFullSize.width)")
 
         suffixLabel.stringValue = suffix
         suffixLabel.sizeToFit()
