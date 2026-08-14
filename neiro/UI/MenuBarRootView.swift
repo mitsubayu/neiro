@@ -20,7 +20,7 @@ struct MenuBarRootView: View {
             }
 
             if let title = appState.nowPlayingTitle {
-                HStack(spacing: 10) {
+                ZStack(alignment: .bottomLeading) {
                     Group {
                         if let artwork = appState.nowPlayingArtwork {
                             Image(nsImage: artwork)
@@ -28,26 +28,33 @@ struct MenuBarRootView: View {
                                 .aspectRatio(contentMode: .fill)
                         } else {
                             Image(systemName: "music.note")
+                                .font(.system(size: 60))
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(.quaternary.opacity(0.5))
                         }
                     }
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+
+                    LinearGradient(colors: [.clear, .black.opacity(0.75)],
+                                   startPoint: .center, endPoint: .bottom)
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
-                            .font(.caption.bold())
-                            .lineLimit(1)
+                            .font(.headline)
+                            .lineLimit(2)
                         if let artist = appState.nowPlayingArtist, !artist.isEmpty {
                             Text(artist)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                                .opacity(0.85)
                                 .lineLimit(1)
                         }
                     }
-                    Spacer()
+                    .foregroundStyle(.white)
+                    .padding(10)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
             if case .error = appState.status {
@@ -127,7 +134,7 @@ struct MenuBarRootView: View {
                     }
                 }
             }
-            .frame(maxHeight: 320)
+            .frame(maxHeight: 230)
 
             Divider()
 
