@@ -9,6 +9,11 @@ final class TrackRateDetector {
     /// Called on the main queue with the detected source rate in Hz.
     var onRateDetected: ((Double) -> Void)?
 
+    /// Called on the main queue when Music's decoder logs its output format —
+    /// `Output format:  2 ch,  96000 Hz, lpcm … 24-bit little-endian signed
+    /// integer`. `bitDepth` is nil for float/unknown formats (e.g. AAC).
+    var onBitDepthDetected: ((_ sampleRate: Double, _ bitDepth: Int?) -> Void)?
+
     private var process: Process?
     private var lineBuffer = Data()
     private let queue = DispatchQueue(label: "museq.ratedetector")
@@ -37,7 +42,7 @@ final class TrackRateDetector {
         logProcess.executableURL = URL(fileURLWithPath: "/usr/bin/log")
         logProcess.arguments = [
             "stream",
-            "--predicate", "process == \"Music\" AND eventMessage CONTAINS \"Creating AudioQueue with format\"",
+            "--predicate", "process == \"Music\" AND (eventMessage CONTAINS \"Creating AudioQueue with format\" OR eventMessage CONTAINS \"Output format:\")",
             "--style", "ndjson",
         ]
         let pipe = Pipe()
@@ -73,10 +78,31 @@ final class TrackRateDetector {
             let line = lineBuffer[lineBuffer.startIndex..<newline]
             lineBuffer.removeSubrange(lineBuffer.startIndex...newline)
             guard let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
-                  let message = json["eventMessage"] as? String,
-                  let rate = Self.parseSampleRate(fromEventMessage: message) else { continue }
-            DispatchQueue.main.async { [weak self] in self?.onRateDetected?(rate) }
+                  let message = json["eventMessage"] as? String else { continue }
+            if let rate = Self.parseSampleRate(fromEventMessage: message) {
+                DispatchQueue.main.async { [weak self] in self?.onRateDetected?(rate) }
+            } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
+                DispatchQueue.main.async { [weak self] in
+                    self?.onBitDepthDetected?(format.sampleRate, format.bitDepth)
+                }
+            }
         }
+    }
+
+    /// Parses decoder lines like `Output format:  2 ch,  96000 Hz, lpcm
+    /// (0x0000000C) 24-bit little-endian signed integer`. Returns nil for
+    /// non-output lines; bitDepth is nil for float formats.
+    static func parseOutputFormat(fromEventMessage message: String) -> (sampleRate: Double, bitDepth: Int?)? {
+        guard message.contains("Output format:") else { return nil }
+        guard let rateRange = message.range(of: #"(\d+) Hz"#, options: .regularExpression),
+              let rate = Double(message[rateRange].dropLast(" Hz".count)),
+              rate >= 8000, rate <= 768_000 else { return nil }
+        var depth: Int?
+        if !message.localizedCaseInsensitiveContains("float"),
+           let depthRange = message.range(of: #"(\d+)-bit"#, options: .regularExpression) {
+            depth = Int(message[depthRange].dropLast("-bit".count))
+        }
+        return (rate, depth)
     }
 
     static func parseSampleRate(fromEventMessage message: String) -> Double? {

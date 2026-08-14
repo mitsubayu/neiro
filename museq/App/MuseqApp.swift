@@ -13,7 +13,7 @@ struct MuseqApp: App {
         } label: {
             Image(systemName: "slider.horizontal.3")
             if appState.status == .running {
-                Text(appState.sampleRateLabel)
+                Text(appState.formatLabel)
             }
         }
         .menuBarExtraStyle(.window)

@@ -70,6 +70,20 @@ struct BiquadTests {
         #expect(TrackRateDetector.parseSampleRate(fromEventMessage: "sampleRate:1") == nil)
     }
 
+    @Test func outputFormatParsing() {
+        let alac = "(0xb01282880) Output format:  2 ch,  96000 Hz, lpcm (0x0000000C) 24-bit little-endian signed integer"
+        let parsed = TrackRateDetector.parseOutputFormat(fromEventMessage: alac)
+        #expect(parsed?.sampleRate == 96000)
+        #expect(parsed?.bitDepth == 24)
+
+        let aac = "(0xb) Output format:  2 ch,  44100 Hz, lpcm (0x29) 32-bit little-endian float, deinterleaved"
+        let parsedFloat = TrackRateDetector.parseOutputFormat(fromEventMessage: aac)
+        #expect(parsedFloat?.sampleRate == 44100)
+        #expect(parsedFloat?.bitDepth == nil)
+
+        #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: "Input format:  2 ch,  96000 Hz, qlac") == nil)
+    }
+
     @Test func settingsDecodeWithoutNewerKeys() throws {
         let legacy = #"{"isEnabled":true,"preGainDB":-3}"#
         let settings = try JSONDecoder().decode(EQSettings.self, from: Data(legacy.utf8))

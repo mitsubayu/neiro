@@ -78,7 +78,7 @@ struct MenuBarRootView: View {
 
     private var statusText: String {
         if case .running = appState.status {
-            return "Running · \(appState.sampleRateLabel)Hz"
+            return "Running · \(appState.formatLabel)"
         }
         return appState.status.label
     }

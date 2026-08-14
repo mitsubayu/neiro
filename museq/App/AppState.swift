@@ -26,14 +26,19 @@ final class AppState {
     }
     private(set) var status: EngineStatus = .disabled
     private(set) var engineSampleRate: Double = 44_100
+    private(set) var trackBitDepth: Int?
 
-    /// "44.1k" / "48k" / "96k" — shown in the menu bar next to the icon.
-    var sampleRateLabel: String {
+    /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
+    /// the menu bar next to the icon and in the status row.
+    var formatLabel: String {
         let kilohertz = engineSampleRate / 1000
-        let text = kilohertz == kilohertz.rounded()
-            ? String(format: "%.0f", kilohertz)
-            : String(format: "%.1f", kilohertz)
-        return "\(text)k"
+        let rateText = kilohertz == kilohertz.rounded()
+            ? String(format: "%.0fkHz", kilohertz)
+            : String(format: "%.1fkHz", kilohertz)
+        if let depth = trackBitDepth {
+            return "\(rateText)/\(depth)bit"
+        }
+        return rateText
     }
 
     let deviceMonitor = OutputDeviceMonitor()
@@ -60,6 +65,14 @@ final class AppState {
 
         deviceMonitor.onChange = { [weak self] in self?.handleDeviceListChange() }
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
+        rateDetector.onBitDepthDetected = { [weak self] rate, depth in
+            guard let self else { return }
+            // The decoder-output line carries the depth; trust it once its
+            // rate agrees with the track rate we're following.
+            if self.lastTrackRate == nil || rate == self.lastTrackRate {
+                self.trackBitDepth = depth
+            }
+        }
         observeMusicLifecycle()
         updateRateDetectorState()
 
