@@ -138,7 +138,7 @@ private final class KeyablePanel: NSPanel {
 final class StatusMarqueeView: NSView {
     private let iconView = NSImageView()
     private let titleClipView = NSView()
-    private let titleLayer = CATextLayer()
+    private let titleLayer = CALayer()
     private let suffixLabel = NSTextField(labelWithString: "")
     private var titleWidth: CGFloat = 0
     private var loopWidth: CGFloat = 0
@@ -169,8 +169,7 @@ final class StatusMarqueeView: NSView {
         titleClipView.wantsLayer = true
         titleClipView.layer?.masksToBounds = true
         titleLayer.anchorPoint = .zero
-        titleLayer.truncationMode = .none
-        titleLayer.isWrapped = false
+        titleLayer.contentsGravity = .topLeft
         titleLayer.contentsScale = 2  // corrected from the window's backing scale below
         titleClipView.layer?.addSublayer(titleLayer)
         titleClipView.autoresizingMask = []
@@ -200,16 +199,29 @@ final class StatusMarqueeView: NSView {
         rebuildTitleLayerString()
     }
 
-    /// CATextLayer doesn't resolve dynamic system colors, so bake the
-    /// current appearance's labelColor into the attributed string.
+    /// AppKit renders the string into an image (same crisp text rasterizer
+    /// as real labels — CATextLayer's own drawing is visibly softer) and the
+    /// layer just scrolls that bitmap. Re-run on appearance changes so the
+    /// baked-in labelColor matches light/dark mode.
     private func rebuildTitleLayerString() {
-        var resolvedColor = NSColor.labelColor
-        effectiveAppearance.performAsCurrentDrawingAppearance {
-            resolvedColor = NSColor(cgColor: NSColor.labelColor.cgColor) ?? .labelColor
+        guard !titleDisplayString.isEmpty else {
+            titleLayer.contents = nil
+            return
         }
-        titleLayer.string = NSAttributedString(
-            string: titleDisplayString,
-            attributes: [.font: Self.font, .foregroundColor: resolvedColor])
+        let width = loopWidth > 0 ? loopWidth + titleWidth : titleWidth
+        let size = NSSize(width: max(width, 1), height: Self.lineHeight)
+        let text = titleDisplayString
+        let appearance = effectiveAppearance
+        let image = NSImage(size: size, flipped: false) { rect in
+            appearance.performAsCurrentDrawingAppearance {
+                NSAttributedString(
+                    string: text,
+                    attributes: [.font: Self.font, .foregroundColor: NSColor.labelColor]
+                ).draw(in: rect)
+            }
+            return true
+        }
+        titleLayer.contents = image
     }
 
     @available(*, unavailable)
@@ -274,7 +286,8 @@ final class StatusMarqueeView: NSView {
         var x = Self.iconWidth
         if !currentTitle.isEmpty {
             x += Self.gap
-            titleClipView.frame = NSRect(x: x, y: (height - Self.lineHeight) / 2,
+            // Integral-pixel origin: fractional offsets soften the glyphs.
+            titleClipView.frame = NSRect(x: round(x), y: round((height - Self.lineHeight) / 2),
                                          width: Self.titleMaxWidth, height: Self.lineHeight)
             x += Self.titleMaxWidth
         }
