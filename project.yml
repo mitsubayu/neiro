@@ -20,6 +20,7 @@ targets:
       path: neiro/Info.plist
       properties:
         CFBundleDisplayName: neiro
+        CFBundleIconFile: AppIcon
         LSUIElement: true
         NSAudioCaptureUsageDescription: neiro captures Music.app's audio output to apply the parametric EQ you configure.
         NSAppleEventsUsageDescription: neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.

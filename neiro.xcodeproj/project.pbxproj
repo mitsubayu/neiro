@@ -23,6 +23,7 @@
 		A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */; };
 		A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */; };
 		AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */; };
+		B68DD9D8AA8F612968971393 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 14B019F35C3F44EF7E71F95A /* AppIcon.icns */; };
 		D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E437D51DE4866987DCECAA8F /* EQModel.swift */; };
 		E28F5A9CF65196D1659D587D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070094852EBD4F24EF30E1B9 /* AppState.swift */; };
 		E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */; };
@@ -43,6 +44,7 @@
 		070094852EBD4F24EF30E1B9 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		0769917D43131ABBEAC7ABAA /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapEngine.swift; sourceTree = "<group>"; };
+		14B019F35C3F44EF7E71F95A /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1C0EF54BC11A2943DF924034 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
 		34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRateDetector.swift; sourceTree = "<group>"; };
 		42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 		1DD9764B35A05E0DAC6C5F7B /* neiro */ = {
 			isa = PBXGroup;
 			children = (
+				14B019F35C3F44EF7E71F95A /* AppIcon.icns */,
 				C6F4A2437E9844E56B60F534 /* Info.plist */,
 				3B920BA090D1AC6FECAAA018 /* App */,
 				82199C074E7B98999F658275 /* Audio */,
@@ -164,6 +167,7 @@
 			buildConfigurationList = 407BA41B878CBB35F414428D /* Build configuration list for PBXNativeTarget "neiro" */;
 			buildPhases = (
 				CC9BC7A8722CE1CA462A9907 /* Sources */,
+				A0DBD455136030A319E4F461 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -232,6 +236,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A0DBD455136030A319E4F461 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B68DD9D8AA8F612968971393 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2D5B55DEE3BAD3E9DB6151A8 /* Sources */ = {
