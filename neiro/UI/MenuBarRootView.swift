@@ -88,6 +88,7 @@ struct MenuBarRootView: View {
                             ForEach(appState.userPresets) { preset in
                                 Menu(preset.name) {
                                     Button("Apply") { appState.applyPreset(preset) }
+                                    Button("Update with Current EQ") { appState.updatePreset(preset) }
                                     Button("Delete", role: .destructive) { appState.deletePreset(preset) }
                                 }
                             }

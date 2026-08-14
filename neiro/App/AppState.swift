@@ -425,6 +425,16 @@ final class AppState {
         activePresetName = matchingPresetName()
     }
 
+    /// Overwrites the preset's contents with the current bands + pre-gain,
+    /// keeping its name and identity.
+    func updatePreset(_ preset: EQPreset) {
+        guard let index = userPresets.firstIndex(where: { $0.id == preset.id }) else { return }
+        userPresets[index].bands = settings.bands
+        userPresets[index].preGainDB = settings.preGainDB
+        PresetStore.save(userPresets)
+        activePresetName = matchingPresetName()
+    }
+
     func deletePreset(_ preset: EQPreset) {
         userPresets.removeAll { $0.id == preset.id }
         PresetStore.save(userPresets)
