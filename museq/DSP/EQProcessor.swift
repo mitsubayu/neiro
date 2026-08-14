@@ -23,6 +23,7 @@ final class EQProcessor {
     private let headers: UnsafeMutablePointer<BankHeader>
     private let states: UnsafeMutablePointer<BiquadState>
     private let activeBank = Atomic<Int>(0)
+    private let mutedFlag = Atomic<Bool>(false)
 
     // Serializes writers (main thread UI updates vs. control-queue sample-rate
     // changes). Never touched by the realtime thread.
@@ -72,8 +73,20 @@ final class EQProcessor {
         activeBank.store(bank, ordering: .releasing)
     }
 
+    /// Silences output while a pending sample-rate switch would otherwise play
+    /// the track head at the wrong rate. Safe to call from any thread.
+    func setMuted(_ muted: Bool) {
+        mutedFlag.store(muted, ordering: .relaxed)
+    }
+
     /// Realtime-safe. `buffer` is interleaved with `channels` samples per frame.
     func process(_ buffer: UnsafeMutablePointer<Float32>, frames: Int, channels: Int) {
+        if mutedFlag.load(ordering: .relaxed) {
+            for i in 0..<(frames * channels) {
+                buffer[i] = 0
+            }
+            return
+        }
         let bank = activeBank.load(ordering: .acquiring)
         let header = headers[bank]
         let bankCoefficients = coefficients + bank * maxBands

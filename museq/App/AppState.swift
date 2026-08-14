@@ -54,6 +54,7 @@ final class AppState {
     @ObservationIgnored private var lastTrackRate: Double?
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
+    @ObservationIgnored private var muteCheckInFlight = false
     private static let logger = Logger(subsystem: "com.mitsuba.museq", category: "rate")
 
     init() {
@@ -117,7 +118,7 @@ final class AppState {
         return OutputDeviceMonitor.currentDefaultOutput()?.uid
     }
 
-    private func startEngine(resumePlaybackAfterStart: Bool = false) {
+    private func startEngine(resumePlaybackAfterStart: Bool = false, restartTrackFromHead: Bool = false) {
         musicWaitTask?.cancel()
 
         guard let musicProcess = MusicProcessLocator.musicProcessObjectID() else {
@@ -153,8 +154,15 @@ final class AppState {
             // Serial queue: runs after the start block above has finished.
             engine.controlQueue.async { [weak self] in
                 usleep(300_000)
+                if restartTrackFromHead {
+                    MusicRemote.setPosition(to: 0)
+                }
                 MusicRemote.play()
-                Task { @MainActor [weak self] in self?.isSwitchingRate = false }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.processor.setMuted(false)
+                    self.isSwitchingRate = false
+                }
             }
         }
     }
@@ -176,40 +184,91 @@ final class AppState {
     private func handleDetectedTrackRate(_ rate: Double) {
         lastTrackRate = rate
         Self.logger.info("detected track rate \(rate)")
+        muteHeadIfSwitchPending()
         scheduleRateSwitchEvaluation()
     }
 
-    private func scheduleRateSwitchEvaluation() {
+    /// A switch is coming: silence our output right away so the track head
+    /// isn't heard at the wrong rate (it will be replayed from 0:00 after the
+    /// switch — without this the listener hears the intro twice). Only mutes
+    /// near the track head; mid-track detections are next-item pre-rolls and
+    /// the current track must keep playing.
+    private func muteHeadIfSwitchPending() {
+        guard let rate = lastTrackRate, rate != engineSampleRate,
+              status == .running, settings.followTrackRate,
+              !isSwitchingRate, !muteCheckInFlight else { return }
+        muteCheckInFlight = true
+        Task { @MainActor [weak self] in
+            defer { self?.muteCheckInFlight = false }
+            guard let self else { return }
+            let state = await Task.detached { MusicRemote.playerState() }.value
+            guard state == "playing" else { return }
+            let position = await Task.detached { MusicRemote.playerPosition() }.value ?? .infinity
+            if position <= 5, self.lastTrackRate != self.engineSampleRate, !self.isSwitchingRate {
+                Self.logger.info("muting head at \(position)s pending rate switch")
+                self.processor.setMuted(true)
+            }
+        }
+    }
+
+    private func scheduleRateSwitchEvaluation(afterMilliseconds delay: Int = 1200) {
         pendingRateTask?.cancel()
         pendingRateTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(1200))
+            try? await Task.sleep(for: .milliseconds(delay))
             guard !Task.isCancelled else { return }
             self?.evaluateRateSwitch()
         }
     }
 
-    /// The controlled switch: pause → retarget device rate + rebuild engine →
-    /// resume. The pause keeps the switch from audibly cutting out mid-track
-    /// (the LosslessSwitcher failure mode) — Music re-creates its AudioQueue
-    /// at the new device rate on resume.
+    /// The controlled switch, tuned to never chop audio the listener cares
+    /// about:
+    /// - Music idle/paused → retarget silently, no transport commands.
+    /// - Near the track head (≤5s) → pause, rebuild at the new rate, seek back
+    ///   to 0:00 and resume, so the track restarts cleanly instead of losing
+    ///   its head (the user's complaint with LosslessSwitcher-style behavior).
+    /// - Mid-track (>5s) → this is Music pre-rolling the *next* item at a
+    ///   different rate; defer and re-check until the boundary passes.
     private func evaluateRateSwitch() {
         guard let rate = lastTrackRate, settings.isEnabled, settings.followTrackRate,
-              status == .running, rate != engineSampleRate else { return }
+              status == .running, rate != engineSampleRate else {
+            // No switch needed after all (e.g. rate flapped back) — make sure
+            // a head-mute from a premature detection doesn't stick.
+            processor.setMuted(false)
+            return
+        }
         if isSwitchingRate {
             scheduleRateSwitchEvaluation()
             return
         }
-        Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate)")
         isSwitchingRate = true
         Task { @MainActor [weak self] in
-            await Task.detached { MusicRemote.pause() }.value
             guard let self else { return }
-            self.startEngine(resumePlaybackAfterStart: true)
+            let state = await Task.detached { MusicRemote.playerState() }.value
+            guard state == "playing" else {
+                Self.logger.info("switching silently to \(rate) (player \(state ?? "unreachable"))")
+                self.processor.setMuted(false)
+                self.startEngine()
+                self.isSwitchingRate = false
+                return
+            }
+            let position = await Task.detached { MusicRemote.playerPosition() }.value ?? 0
+            guard position <= 5 else {
+                Self.logger.info("deferring switch to \(rate): mid-track at \(position)s")
+                self.processor.setMuted(false)
+                self.isSwitchingRate = false
+                self.scheduleRateSwitchEvaluation(afterMilliseconds: 2000)
+                return
+            }
+            Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate), restarting track from head (was at \(position)s)")
+            await Task.detached { MusicRemote.pause() }.value
+            self.startEngine(resumePlaybackAfterStart: true, restartTrackFromHead: true)
         }
     }
 
     private func stopEngine() {
         musicWaitTask?.cancel()
+        pendingRateTask?.cancel()
+        processor.setMuted(false)
         activeOutputUID = nil
         let engine = self.engine
         engine.controlQueue.async { engine.stop() }
