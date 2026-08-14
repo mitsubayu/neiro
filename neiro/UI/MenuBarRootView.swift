@@ -73,10 +73,10 @@ struct MenuBarRootView: View {
                 Text("Saves the current bands and pre-gain.")
             }
 
-            ResponseCurveView(bands: appState.settings.bands,
+            ResponseCurveView(bands: $appState.settings.bands,
                               preGainDB: appState.settings.preGainDB,
                               sampleRate: appState.engineSampleRate)
-                .frame(height: 90)
+                .frame(height: 150)
 
             HStack {
                 Text("Pre-gain").font(.caption)
