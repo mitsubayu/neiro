@@ -143,6 +143,11 @@ struct MenuBarRootView: View {
             } label: {
                 Text("Bands (freq / gain / Q)")
                     .font(.caption)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation { bandsExpanded.toggle() }
+                    }
             }
 
             Divider()
