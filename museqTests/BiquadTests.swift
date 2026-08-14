@@ -81,6 +81,11 @@ struct BiquadTests {
         #expect(parsedFloat?.sampleRate == 44100)
         #expect(parsedFloat?.bitDepth == nil)
 
+        let cdQuality = "(0xaeda13200) Output format:  2 ch,  44100 Hz, Int16, interleaved"
+        let parsedInt16 = TrackRateDetector.parseOutputFormat(fromEventMessage: cdQuality)
+        #expect(parsedInt16?.sampleRate == 44100)
+        #expect(parsedInt16?.bitDepth == 16)
+
         #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: "Input format:  2 ch,  96000 Hz, qlac") == nil)
     }
 

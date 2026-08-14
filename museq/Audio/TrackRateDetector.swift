@@ -98,9 +98,14 @@ final class TrackRateDetector {
               let rate = Double(message[rateRange].dropLast(" Hz".count)),
               rate >= 8000, rate <= 768_000 else { return nil }
         var depth: Int?
-        if !message.localizedCaseInsensitiveContains("float"),
-           let depthRange = message.range(of: #"(\d+)-bit"#, options: .regularExpression) {
-            depth = Int(message[depthRange].dropLast("-bit".count))
+        if !message.localizedCaseInsensitiveContains("float") {
+            // Two observed shapes: "lpcm … 24-bit little-endian signed
+            // integer" and the terse "Int16, interleaved".
+            if let depthRange = message.range(of: #"(\d+)-bit"#, options: .regularExpression) {
+                depth = Int(message[depthRange].dropLast("-bit".count))
+            } else if let intRange = message.range(of: #"Int(\d+)"#, options: .regularExpression) {
+                depth = Int(message[intRange].dropFirst("Int".count))
+            }
         }
         return (rate, depth)
     }

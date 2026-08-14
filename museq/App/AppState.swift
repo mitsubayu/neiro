@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import os
 
 @MainActor
 @Observable
@@ -52,6 +53,8 @@ final class AppState {
     @ObservationIgnored private let rateDetector = TrackRateDetector()
     @ObservationIgnored private var lastTrackRate: Double?
     @ObservationIgnored private var isSwitchingRate = false
+    @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
+    private static let logger = Logger(subsystem: "com.mitsuba.museq", category: "rate")
 
     init() {
         let loaded = SettingsStore.load()
@@ -67,11 +70,10 @@ final class AppState {
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
         rateDetector.onBitDepthDetected = { [weak self] rate, depth in
             guard let self else { return }
-            // The decoder-output line carries the depth; trust it once its
-            // rate agrees with the track rate we're following.
-            if self.lastTrackRate == nil || rate == self.lastTrackRate {
-                self.trackBitDepth = depth
-            }
+            self.trackBitDepth = depth
+            // Some transitions log only decoder-output lines (no "Creating
+            // AudioQueue"), so these must drive rate switching too.
+            self.handleDetectedTrackRate(rate)
         }
         observeMusicLifecycle()
         updateRateDetectorState()
@@ -167,16 +169,37 @@ final class AppState {
         }
     }
 
-    /// Music logs the source rate when it builds a track's AudioQueue. If it
-    /// differs from the rate we're running at, do a controlled switch:
-    /// pause → retarget device rate + rebuild engine → resume. The pause keeps
-    /// the switch from audibly cutting out mid-track (the LosslessSwitcher
-    /// failure mode) — detection happens at the head of the track, and Music
-    /// re-creates its AudioQueue at the new device rate on resume.
+    /// Music logs the source rate when it builds a track's AudioQueue. Around
+    /// track transitions it can build several queues at *different* rates
+    /// within a couple of seconds (pre-rolling the next item), so detections
+    /// are debounced: we act on the last rate that stays stable for 1.2s.
     private func handleDetectedTrackRate(_ rate: Double) {
         lastTrackRate = rate
-        guard settings.isEnabled, settings.followTrackRate, status == .running,
-              !isSwitchingRate, rate != engineSampleRate else { return }
+        Self.logger.info("detected track rate \(rate)")
+        scheduleRateSwitchEvaluation()
+    }
+
+    private func scheduleRateSwitchEvaluation() {
+        pendingRateTask?.cancel()
+        pendingRateTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled else { return }
+            self?.evaluateRateSwitch()
+        }
+    }
+
+    /// The controlled switch: pause → retarget device rate + rebuild engine →
+    /// resume. The pause keeps the switch from audibly cutting out mid-track
+    /// (the LosslessSwitcher failure mode) — Music re-creates its AudioQueue
+    /// at the new device rate on resume.
+    private func evaluateRateSwitch() {
+        guard let rate = lastTrackRate, settings.isEnabled, settings.followTrackRate,
+              status == .running, rate != engineSampleRate else { return }
+        if isSwitchingRate {
+            scheduleRateSwitchEvaluation()
+            return
+        }
+        Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate)")
         isSwitchingRate = true
         Task { @MainActor [weak self] in
             await Task.detached { MusicRemote.pause() }.value
