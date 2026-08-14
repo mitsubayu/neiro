@@ -33,8 +33,12 @@ struct ResponseCurveView: View {
                             draggingIndex = nearestBandIndex(to: value.startLocation, size: size)
                         }
                         guard let index = draggingIndex, bands.indices.contains(index) else { return }
-                        let frequency = frequency(atX: value.location.x, width: size.width)
-                        bands[index].frequency = min(max(frequency, Self.minFrequency), Self.maxFrequency)
+                        // Plain drag adjusts gain only; hold ⌥ to also move
+                        // the band's frequency (prevents accidental drift).
+                        if NSEvent.modifierFlags.contains(.option) {
+                            let frequency = frequency(atX: value.location.x, width: size.width)
+                            bands[index].frequency = min(max(frequency, Self.minFrequency), Self.maxFrequency)
+                        }
                         let gain = gainDB(atY: value.location.y, height: size.height)
                         bands[index].gainDB = min(max(gain, -Self.maxGainDB), Self.maxGainDB)
                     }
