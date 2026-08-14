@@ -4,6 +4,9 @@ struct MenuBarRootView: View {
     @Environment(AppState.self) private var appState
     @State private var isNamingPreset = false
     @State private var presetName = ""
+    @State private var bandsExpanded = false
+
+    private static let contentWidth: CGFloat = 352
 
     var body: some View {
         @Bindable var appState = appState
@@ -34,8 +37,8 @@ struct MenuBarRootView: View {
                                 .background(.quaternary.opacity(0.5))
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
+                    .frame(width: Self.contentWidth, height: Self.contentWidth)
+                    .clipped()
 
                     LinearGradient(colors: [.clear, .black.opacity(0.75)],
                                    startPoint: .center, endPoint: .bottom)
@@ -127,14 +130,19 @@ struct MenuBarRootView: View {
 
             Divider()
 
-            ScrollView {
-                VStack(spacing: 6) {
-                    ForEach($appState.settings.bands) { $band in
-                        EQBandRow(band: $band)
+            DisclosureGroup(isExpanded: $bandsExpanded) {
+                ScrollView {
+                    VStack(spacing: 6) {
+                        ForEach($appState.settings.bands) { $band in
+                            EQBandRow(band: $band)
+                        }
                     }
                 }
+                .frame(maxHeight: 200)
+            } label: {
+                Text("Bands (freq / gain / Q)")
+                    .font(.caption)
             }
-            .frame(maxHeight: 230)
 
             Divider()
 
