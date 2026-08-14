@@ -350,7 +350,13 @@ final class AppState {
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
                   app.bundleIdentifier == MusicProcessLocator.bundleID else { return }
             Task { @MainActor [weak self] in
-                guard let self, self.settings.isEnabled else { return }
+                guard let self else { return }
+                self.nowPlayingTitle = nil
+                self.nowPlayingArtist = nil
+                self.nowPlayingArtwork = nil
+                self.trackCodec = nil
+                self.trackBitDepth = nil
+                guard self.settings.isEnabled else { return }
                 let engine = self.engine
                 engine.controlQueue.async { engine.stop() }
                 self.status = .waitingForMusic

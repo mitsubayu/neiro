@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// Pause/resume Music.app via AppleScript (osascript). Requires the
@@ -59,6 +60,11 @@ enum MusicRemote {
     /// callers treat nil as "Music unreachable" and degrade gracefully.
     @discardableResult
     private static func run(_ script: String, timeout: TimeInterval = 3) -> String? {
+        // AppleScript launches its target app when it isn't running — a
+        // stray now-playing refresh after the user quits Music must not
+        // resurrect it.
+        guard !NSRunningApplication.runningApplications(
+            withBundleIdentifier: MusicProcessLocator.bundleID).isEmpty else { return nil }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", script]
