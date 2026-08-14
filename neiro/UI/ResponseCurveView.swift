@@ -103,7 +103,9 @@ struct ResponseCurveView: View {
         for step in 0..<Self.sampleCount {
             let fraction = Double(step) / Double(Self.sampleCount - 1)
             let frequency = Self.minFrequency * pow(Self.maxFrequency / Self.minFrequency, fraction)
-            var magnitudeDB = preGainDB
+            // Pre-gain is headroom management, not tonal shape — drawing it
+            // would shift the whole curve away from the band handles.
+            var magnitudeDB = 0.0
             for c in coefficients {
                 magnitudeDB += 20 * log10(max(c.magnitude(at: frequency, sampleRate: sampleRate), 1e-9))
             }
