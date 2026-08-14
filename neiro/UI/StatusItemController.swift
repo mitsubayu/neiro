@@ -171,6 +171,7 @@ final class StatusMarqueeView: NSView {
         titleLayer.anchorPoint = .zero
         titleLayer.truncationMode = .none
         titleLayer.isWrapped = false
+        titleLayer.contentsScale = 2  // corrected from the window's backing scale below
         titleClipView.layer?.addSublayer(titleLayer)
         titleClipView.autoresizingMask = []
         suffixLabel.autoresizingMask = []
@@ -181,7 +182,17 @@ final class StatusMarqueeView: NSView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        titleLayer.contentsScale = window?.backingScaleFactor ?? 2
+        applyBackingScale()
+    }
+
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        applyBackingScale()
+    }
+
+    private func applyBackingScale() {
+        guard let scale = window?.backingScaleFactor, scale > 0 else { return }
+        titleLayer.contentsScale = scale
     }
 
     override func viewDidChangeEffectiveAppearance() {
