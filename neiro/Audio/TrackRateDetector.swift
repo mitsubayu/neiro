@@ -16,7 +16,7 @@ final class TrackRateDetector {
 
     private var process: Process?
     private var lineBuffer = Data()
-    private let queue = DispatchQueue(label: "museq.ratedetector")
+    private let queue = DispatchQueue(label: "neiro.ratedetector")
 
     func start() {
         queue.async { [weak self] in self?.startLocked() }

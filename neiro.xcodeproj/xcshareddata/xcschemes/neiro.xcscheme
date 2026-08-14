@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "ABF21E18FCC8363D1D8522EF"
-               BuildableName = "museq.app"
-               BlueprintName = "museq"
-               ReferencedContainer = "container:museq.xcodeproj">
+               BlueprintIdentifier = "25A97DFACD83182EAF0E20E7"
+               BuildableName = "neiro.app"
+               BlueprintName = "neiro"
+               ReferencedContainer = "container:neiro.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +32,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ABF21E18FCC8363D1D8522EF"
-            BuildableName = "museq.app"
-            BlueprintName = "museq"
-            ReferencedContainer = "container:museq.xcodeproj">
+            BlueprintIdentifier = "25A97DFACD83182EAF0E20E7"
+            BuildableName = "neiro.app"
+            BlueprintName = "neiro"
+            ReferencedContainer = "container:neiro.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -44,10 +44,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2B390E10F501E73408C7F646"
-               BuildableName = "museqTests.xctest"
-               BlueprintName = "museqTests"
-               ReferencedContainer = "container:museq.xcodeproj">
+               BlueprintIdentifier = "D5AB17B27F2FE14864DB64D2"
+               BuildableName = "neiroTests.xctest"
+               BlueprintName = "neiroTests"
+               ReferencedContainer = "container:neiro.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -68,10 +68,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ABF21E18FCC8363D1D8522EF"
-            BuildableName = "museq.app"
-            BlueprintName = "museq"
-            ReferencedContainer = "container:museq.xcodeproj">
+            BlueprintIdentifier = "25A97DFACD83182EAF0E20E7"
+            BuildableName = "neiro.app"
+            BlueprintName = "neiro"
+            ReferencedContainer = "container:neiro.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -87,10 +87,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ABF21E18FCC8363D1D8522EF"
-            BuildableName = "museq.app"
-            BlueprintName = "museq"
-            ReferencedContainer = "container:museq.xcodeproj">
+            BlueprintIdentifier = "25A97DFACD83182EAF0E20E7"
+            BuildableName = "neiro.app"
+            BlueprintName = "neiro"
+            ReferencedContainer = "container:neiro.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>

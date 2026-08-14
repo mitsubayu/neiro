@@ -55,7 +55,7 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
-    private static let logger = Logger(subsystem: "com.mitsuba.museq", category: "rate")
+    private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
 
     init() {
         let loaded = SettingsStore.load()

@@ -1,4 +1,4 @@
-name: museq
+name: neiro
 options:
   bundleIdPrefix: com.mitsuba
   deploymentTarget:
@@ -11,34 +11,34 @@ settings:
     DEVELOPMENT_TEAM: 7N7LUCUW5K
     ENABLE_HARDENED_RUNTIME: NO
 targets:
-  museq:
+  neiro:
     type: application
     platform: macOS
     sources:
-      - museq
+      - neiro
     info:
-      path: museq/Info.plist
+      path: neiro/Info.plist
       properties:
-        CFBundleDisplayName: museq
+        CFBundleDisplayName: neiro
         LSUIElement: true
-        NSAudioCaptureUsageDescription: museq captures Music.app's audio output to apply the parametric EQ you configure.
-        NSAppleEventsUsageDescription: museq briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.
+        NSAudioCaptureUsageDescription: neiro captures Music.app's audio output to apply the parametric EQ you configure.
+        NSAppleEventsUsageDescription: neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mitsuba.museq
+        PRODUCT_BUNDLE_IDENTIFIER: com.mitsuba.neiro
         ENABLE_APP_SANDBOX: NO
     scheme:
       testTargets:
-        - museqTests
-  museqTests:
+        - neiroTests
+  neiroTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - museqTests
+      - neiroTests
     dependencies:
-      - target: museq
+      - target: neiro
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/museq.app/Contents/MacOS/museq
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/neiro.app/Contents/MacOS/neiro
         BUNDLE_LOADER: $(TEST_HOST)

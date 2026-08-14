@@ -14,7 +14,7 @@ final class OutputDeviceMonitor {
     var onChange: (() -> Void)?
 
     @ObservationIgnored private var listeners: [PropertyListener] = []
-    @ObservationIgnored private let queue = DispatchQueue(label: "museq.devices")
+    @ObservationIgnored private let queue = DispatchQueue(label: "neiro.devices")
 
     init() {
         refresh()
@@ -55,9 +55,9 @@ final class OutputDeviceMonitor {
             guard let device = Self.describe(id),
                   // Our own aggregate is private but still visible to the
                   // process that owns it — listing it would let the user route
-                  // museq into itself, and its create/destroy churn must not
+                  // neiro into itself, and its create/destroy churn must not
                   // look like a real device change.
-                  device.uid != museqAggregateUID else { return nil }
+                  device.uid != neiroAggregateUID else { return nil }
             return device
         }
     }

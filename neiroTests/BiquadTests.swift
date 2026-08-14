@@ -1,5 +1,5 @@
 import Testing
-@testable import museq
+@testable import neiro
 import Foundation
 
 struct BiquadTests {

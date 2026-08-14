@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>museq</string>
+	<string>neiro</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,8 +23,8 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>museq briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.</string>
+	<string>neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>museq captures Music.app's audio output to apply the parametric EQ you configure.</string>
+	<string>neiro captures Music.app's audio output to apply the parametric EQ you configure.</string>
 </dict>
 </plist>

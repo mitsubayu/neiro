@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MuseqApp: App {
+struct NeiroApp: App {
     @State private var appState = AppState()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
@@ -23,7 +23,7 @@ struct MuseqApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var appState: AppState?
 
-    // Destroying the tap un-mutes Music.app; without this, quitting museq
+    // Destroying the tap un-mutes Music.app; without this, quitting neiro
     // mid-session leaves Music silenced until it relaunches.
     func applicationWillTerminate(_ notification: Notification) {
         appState?.shutdownForTermination()

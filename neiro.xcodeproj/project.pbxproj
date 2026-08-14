@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0580F123A7C13C7502F4C1A6 /* BiquadKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */; };
+		08B25CF586F3B379AA526C57 /* CoreAudioUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611AC8C368068836E205F06F /* CoreAudioUtils.swift */; };
+		2B2DF20CDB98449D99DAB190 /* NeiroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50EDEA29D6145FC019262B11 /* NeiroApp.swift */; };
+		2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */; };
+		316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0769917D43131ABBEAC7ABAA /* SettingsStore.swift */; };
+		34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E160B23077B14806E1E35A1 /* EQProcessor.swift */; };
+		4A746BCBFACD33B4C1AC5639 /* BiquadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0EF54BC11A2943DF924034 /* BiquadTests.swift */; };
+		72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */; };
+		8187D61F53EC56CE18AE842C /* MusicRemote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020D94E22C12B79F11A64774 /* MusicRemote.swift */; };
+		99BEBFBE3B6BAAEF309F15CB /* OutputDeviceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */; };
+		A0CC43B3C88BE60A91834189 /* EQBandRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82485437C1862615478D1401 /* EQBandRow.swift */; };
+		A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */; };
+		A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */; };
+		AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */; };
+		D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E437D51DE4866987DCECAA8F /* EQModel.swift */; };
+		E28F5A9CF65196D1659D587D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070094852EBD4F24EF30E1B9 /* AppState.swift */; };
+		E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B3C2B39C74D2CBBD068FC004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 50AAFDA40BAAF5F50BD6E3B6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 25A97DFACD83182EAF0E20E7;
+			remoteInfo = neiro;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		020D94E22C12B79F11A64774 /* MusicRemote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicRemote.swift; sourceTree = "<group>"; };
+		070094852EBD4F24EF30E1B9 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		0769917D43131ABBEAC7ABAA /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapEngine.swift; sourceTree = "<group>"; };
+		1C0EF54BC11A2943DF924034 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
+		34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRateDetector.swift; sourceTree = "<group>"; };
+		42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
+		4A0F8686A7A6A602312FADE9 /* neiro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = neiro.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		50EDEA29D6145FC019262B11 /* NeiroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeiroApp.swift; sourceTree = "<group>"; };
+		5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRootView.swift; sourceTree = "<group>"; };
+		611AC8C368068836E205F06F /* CoreAudioUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioUtils.swift; sourceTree = "<group>"; };
+		679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCurveView.swift; sourceTree = "<group>"; };
+		70635B0CAEF3000882BBE10F /* neiroTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = neiroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		82485437C1862615478D1401 /* EQBandRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQBandRow.swift; sourceTree = "<group>"; };
+		9E160B23077B14806E1E35A1 /* EQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQProcessor.swift; sourceTree = "<group>"; };
+		A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProcessLocator.swift; sourceTree = "<group>"; };
+		C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDeviceMonitor.swift; sourceTree = "<group>"; };
+		C6F4A2437E9844E56B60F534 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E437D51DE4866987DCECAA8F /* EQModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQModel.swift; sourceTree = "<group>"; };
+		ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadKernel.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		156F2C26C7FFE669B1C5B996 /* DSP */ = {
+			isa = PBXGroup;
+			children = (
+				ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */,
+				E437D51DE4866987DCECAA8F /* EQModel.swift */,
+				9E160B23077B14806E1E35A1 /* EQProcessor.swift */,
+			);
+			path = DSP;
+			sourceTree = "<group>";
+		};
+		1DBF13B7E6A0A4F57FF31381 /* neiroTests */ = {
+			isa = PBXGroup;
+			children = (
+				1C0EF54BC11A2943DF924034 /* BiquadTests.swift */,
+			);
+			path = neiroTests;
+			sourceTree = "<group>";
+		};
+		1DD9764B35A05E0DAC6C5F7B /* neiro */ = {
+			isa = PBXGroup;
+			children = (
+				C6F4A2437E9844E56B60F534 /* Info.plist */,
+				3B920BA090D1AC6FECAAA018 /* App */,
+				82199C074E7B98999F658275 /* Audio */,
+				156F2C26C7FFE669B1C5B996 /* DSP */,
+				31DF183F0E7C12FF376AB5EF /* Persistence */,
+				91179432624AA9AD4E59F922 /* UI */,
+			);
+			path = neiro;
+			sourceTree = "<group>";
+		};
+		2D3BE68A07DEEAA227E99FE0 = {
+			isa = PBXGroup;
+			children = (
+				1DD9764B35A05E0DAC6C5F7B /* neiro */,
+				1DBF13B7E6A0A4F57FF31381 /* neiroTests */,
+				2DD39DA85AB0AD29D5A8A243 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2DD39DA85AB0AD29D5A8A243 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4A0F8686A7A6A602312FADE9 /* neiro.app */,
+				70635B0CAEF3000882BBE10F /* neiroTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		31DF183F0E7C12FF376AB5EF /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				0769917D43131ABBEAC7ABAA /* SettingsStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		3B920BA090D1AC6FECAAA018 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				070094852EBD4F24EF30E1B9 /* AppState.swift */,
+				50EDEA29D6145FC019262B11 /* NeiroApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		82199C074E7B98999F658275 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				611AC8C368068836E205F06F /* CoreAudioUtils.swift */,
+				A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */,
+				020D94E22C12B79F11A64774 /* MusicRemote.swift */,
+				C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */,
+				1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */,
+				34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		91179432624AA9AD4E59F922 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				82485437C1862615478D1401 /* EQBandRow.swift */,
+				5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */,
+				42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */,
+				679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		25A97DFACD83182EAF0E20E7 /* neiro */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 407BA41B878CBB35F414428D /* Build configuration list for PBXNativeTarget "neiro" */;
+			buildPhases = (
+				CC9BC7A8722CE1CA462A9907 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = neiro;
+			packageProductDependencies = (
+			);
+			productName = neiro;
+			productReference = 4A0F8686A7A6A602312FADE9 /* neiro.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D5AB17B27F2FE14864DB64D2 /* neiroTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 304BF1C4474C0F74D5DC4D83 /* Build configuration list for PBXNativeTarget "neiroTests" */;
+			buildPhases = (
+				2D5B55DEE3BAD3E9DB6151A8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2EBBEA4BD64538ADACD876D0 /* PBXTargetDependency */,
+			);
+			name = neiroTests;
+			packageProductDependencies = (
+			);
+			productName = neiroTests;
+			productReference = 70635B0CAEF3000882BBE10F /* neiroTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		50AAFDA40BAAF5F50BD6E3B6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					25A97DFACD83182EAF0E20E7 = {
+						DevelopmentTeam = 7N7LUCUW5K;
+						ProvisioningStyle = Automatic;
+					};
+					D5AB17B27F2FE14864DB64D2 = {
+						DevelopmentTeam = 7N7LUCUW5K;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = ED7AD7E9D11F186A7039C299 /* Build configuration list for PBXProject "neiro" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2D3BE68A07DEEAA227E99FE0;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2DD39DA85AB0AD29D5A8A243 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				25A97DFACD83182EAF0E20E7 /* neiro */,
+				D5AB17B27F2FE14864DB64D2 /* neiroTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2D5B55DEE3BAD3E9DB6151A8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A746BCBFACD33B4C1AC5639 /* BiquadTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC9BC7A8722CE1CA462A9907 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E28F5A9CF65196D1659D587D /* AppState.swift in Sources */,
+				0580F123A7C13C7502F4C1A6 /* BiquadKernel.swift in Sources */,
+				08B25CF586F3B379AA526C57 /* CoreAudioUtils.swift in Sources */,
+				A0CC43B3C88BE60A91834189 /* EQBandRow.swift in Sources */,
+				D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */,
+				34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */,
+				A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */,
+				72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */,
+				8187D61F53EC56CE18AE842C /* MusicRemote.swift in Sources */,
+				2B2DF20CDB98449D99DAB190 /* NeiroApp.swift in Sources */,
+				99BEBFBE3B6BAAEF309F15CB /* OutputDeviceMonitor.swift in Sources */,
+				E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */,
+				AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */,
+				2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */,
+				316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */,
+				A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2EBBEA4BD64538ADACD876D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 25A97DFACD83182EAF0E20E7 /* neiro */;
+			targetProxy = B3C2B39C74D2CBBD068FC004 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		114238CF4523D10FEA2030C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.neiroTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/neiro.app/Contents/MacOS/neiro";
+			};
+			name = Debug;
+		};
+		A29799349622A444A5EB12D7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.neiroTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/neiro.app/Contents/MacOS/neiro";
+			};
+			name = Release;
+		};
+		B162B07AA7AAE88D2837F216 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7N7LUCUW5K;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C8C30F8EA57CD16BF51D8957 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = neiro/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.neiro;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D2DB02A0169996B960615263 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = neiro/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.neiro;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D67E113B01F5736C9E5DC031 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7N7LUCUW5K;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		304BF1C4474C0F74D5DC4D83 /* Build configuration list for PBXNativeTarget "neiroTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				114238CF4523D10FEA2030C7 /* Debug */,
+				A29799349622A444A5EB12D7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		407BA41B878CBB35F414428D /* Build configuration list for PBXNativeTarget "neiro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8C30F8EA57CD16BF51D8957 /* Debug */,
+				D2DB02A0169996B960615263 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ED7AD7E9D11F186A7039C299 /* Build configuration list for PBXProject "neiro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B162B07AA7AAE88D2837F216 /* Debug */,
+				D67E113B01F5736C9E5DC031 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 50AAFDA40BAAF5F50BD6E3B6 /* Project object */;
+}

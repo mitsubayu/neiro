@@ -8,7 +8,7 @@ struct MenuBarRootView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Toggle(isOn: $appState.settings.isEnabled) {
-                    Text("museq").font(.headline)
+                    Text("neiro").font(.headline)
                 }
                 .toggleStyle(.switch)
                 Spacer()
@@ -68,7 +68,7 @@ struct MenuBarRootView: View {
                     appState.settings.preGainDB = 0
                 }
                 Spacer()
-                Button("Quit museq") { NSApplication.shared.terminate(nil) }
+                Button("Quit neiro") { NSApplication.shared.terminate(nil) }
             }
             .font(.caption)
         }

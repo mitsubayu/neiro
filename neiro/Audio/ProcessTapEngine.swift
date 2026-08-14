@@ -9,7 +9,7 @@ import os
 /// block). The IO block runs on the HAL realtime thread and touches only
 /// `EQProcessor` and raw buffers.
 final class ProcessTapEngine {
-    let controlQueue = DispatchQueue(label: "museq.engine.control")
+    let controlQueue = DispatchQueue(label: "neiro.engine.control")
 
     /// Incremented from the realtime thread, read from a control-queue timer.
     final class Diagnostics {
@@ -20,7 +20,7 @@ final class ProcessTapEngine {
         let lastOutputFrames = Atomic<Int>(0)
     }
 
-    private static let logger = Logger(subsystem: "com.mitsuba.museq", category: "engine")
+    private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "engine")
 
     private let processor: EQProcessor
     private let diagnostics = Diagnostics()
@@ -52,7 +52,7 @@ final class ProcessTapEngine {
         stopLocked()
 
         let description = CATapDescription(stereoMixdownOfProcesses: [musicProcess])
-        description.name = "museq-tap"
+        description.name = "neiro-tap"
         description.muteBehavior = .mutedWhenTapped
         description.isPrivate = true
 
@@ -70,8 +70,8 @@ final class ProcessTapEngine {
         matchOutputDeviceRate(outputDeviceUID: outputDeviceUID, to: preferredRate ?? tapFormat.mSampleRate)
 
         let aggregateDescription: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "museq-aggregate",
-            kAudioAggregateDeviceUIDKey: museqAggregateUID,
+            kAudioAggregateDeviceNameKey: "neiro-aggregate",
+            kAudioAggregateDeviceUIDKey: neiroAggregateUID,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceIsStackedKey: false,
             kAudioAggregateDeviceMainSubDeviceKey: outputDeviceUID,

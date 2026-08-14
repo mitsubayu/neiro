@@ -1,9 +1,9 @@
 import CoreAudio
 import Foundation
 
-/// UID of the private aggregate museq creates. Kept stable so device
+/// UID of the private aggregate neiro creates. Kept stable so device
 /// enumeration can exclude it (macOS still lists it for the owning process).
-let museqAggregateUID = "com.mitsuba.museq.aggregate"
+let neiroAggregateUID = "com.mitsuba.neiro.aggregate"
 
 struct CoreAudioError: LocalizedError {
     let status: OSStatus
