@@ -89,6 +89,15 @@ struct BiquadTests {
         #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: "Input format:  2 ch,  96000 Hz, qlac") == nil)
     }
 
+    @Test func codecParsing() {
+        let line = "<<<< FAQ >>>> subaq_buildCAAudioQueue: [0x9:0x9] RP/ZZ.25 Creating AudioQueue with format:'qlac', framesPerPacket:4096, sampleRate:48000, releasePlayResourceForFormatChange:1"
+        #expect(TrackRateDetector.parseCodec(fromEventMessage: line) == "qlac")
+        #expect(TrackRateDetector.codecDisplayName("qlac") == "ALAC")
+        #expect(TrackRateDetector.codecDisplayName("alac") == "ALAC")
+        #expect(TrackRateDetector.codecDisplayName("paac") == "AAC")
+        #expect(TrackRateDetector.parseCodec(fromEventMessage: "no format here") == nil)
+    }
+
     @Test func builtInPresetsAreWellFormed() {
         #expect(!BuiltInPresets.all.isEmpty)
         for preset in BuiltInPresets.all {

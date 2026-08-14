@@ -168,7 +168,8 @@ struct MenuBarRootView: View {
 
     private var statusText: String {
         if case .running = appState.status {
-            return "Running · \(appState.formatLabel)"
+            let codec = appState.trackCodec.map { "\($0) " } ?? ""
+            return "Running · \(codec)\(appState.formatLabel)"
         }
         return appState.status.label
     }

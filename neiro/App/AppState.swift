@@ -29,6 +29,7 @@ final class AppState {
     private(set) var status: EngineStatus = .disabled
     private(set) var engineSampleRate: Double = 44_100
     private(set) var trackBitDepth: Int?
+    private(set) var trackCodec: String?
     private(set) var userPresets: [EQPreset] = PresetStore.load()
     private(set) var activePresetName: String?
     private(set) var nowPlayingTitle: String?
@@ -80,6 +81,9 @@ final class AppState {
         observeNowPlaying()
         activePresetName = matchingPresetName()
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
+        rateDetector.onCodecDetected = { [weak self] codec in
+            self?.trackCodec = TrackRateDetector.codecDisplayName(codec)
+        }
         rateDetector.onBitDepthDetected = { [weak self] rate, depth in
             guard let self else { return }
             self.trackBitDepth = depth

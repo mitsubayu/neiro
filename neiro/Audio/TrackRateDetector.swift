@@ -9,6 +9,10 @@ final class TrackRateDetector {
     /// Called on the main queue with the detected source rate in Hz.
     var onRateDetected: ((Double) -> Void)?
 
+    /// Called on the main queue with the source codec fourcc (e.g. "qlac")
+    /// from the AudioQueue-creation line.
+    var onCodecDetected: ((String) -> Void)?
+
     /// Called on the main queue when Music's decoder logs its output format —
     /// `Output format:  2 ch,  96000 Hz, lpcm … 24-bit little-endian signed
     /// integer`. `bitDepth` is nil for float/unknown formats (e.g. AAC).
@@ -80,7 +84,11 @@ final class TrackRateDetector {
             guard let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   let message = json["eventMessage"] as? String else { continue }
             if let rate = Self.parseSampleRate(fromEventMessage: message) {
-                DispatchQueue.main.async { [weak self] in self?.onRateDetected?(rate) }
+                let codec = Self.parseCodec(fromEventMessage: message)
+                DispatchQueue.main.async { [weak self] in
+                    if let codec { self?.onCodecDetected?(codec) }
+                    self?.onRateDetected?(rate)
+                }
             } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
                 DispatchQueue.main.async { [weak self] in
                     self?.onBitDepthDetected?(format.sampleRate, format.bitDepth)
@@ -108,6 +116,28 @@ final class TrackRateDetector {
             }
         }
         return (rate, depth)
+    }
+
+    /// Extracts the codec fourcc from `…with format:'qlac', …`.
+    static func parseCodec(fromEventMessage message: String) -> String? {
+        guard let range = message.range(of: #"format:'([^']+)'"#, options: .regularExpression) else {
+            return nil
+        }
+        let match = message[range]
+        guard let open = match.firstIndex(of: "'"), let close = match.lastIndex(of: "'"),
+              open < close else { return nil }
+        let codec = match[match.index(after: open)..<close].trimmingCharacters(in: .whitespaces)
+        return codec.isEmpty ? nil : codec
+    }
+
+    /// Human-readable codec name for the display ("qlac" → "ALAC").
+    static func codecDisplayName(_ fourcc: String) -> String {
+        let lower = fourcc.lowercased()
+        if lower.contains("lac") { return "ALAC" }
+        if lower.contains("aac") { return "AAC" }
+        if lower.contains("mp3") { return "MP3" }
+        if lower.contains("flac") { return "FLAC" }
+        return fourcc.uppercased()
     }
 
     static func parseSampleRate(fromEventMessage message: String) -> Double? {
