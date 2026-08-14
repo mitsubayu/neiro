@@ -30,6 +30,7 @@ final class AppState {
     private(set) var engineSampleRate: Double = 44_100
     private(set) var trackBitDepth: Int?
     private(set) var userPresets: [EQPreset] = PresetStore.load()
+    private(set) var activePresetName: String?
     private(set) var nowPlayingTitle: String?
     private(set) var nowPlayingArtist: String?
     private(set) var nowPlayingArtwork: NSImage?
@@ -77,6 +78,7 @@ final class AppState {
         deviceMonitor.onChange = { [weak self] in self?.handleDeviceListChange() }
         applyLaunchAtLogin()
         observeNowPlaying()
+        activePresetName = matchingPresetName()
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
         rateDetector.onBitDepthDetected = { [weak self] rate, depth in
             guard let self else { return }
@@ -99,6 +101,7 @@ final class AppState {
         processor.update(settings: settings)
         scheduleSave()
         updateRateDetectorState()
+        activePresetName = matchingPresetName()
         if oldValue.launchAtLogin != settings.launchAtLogin {
             applyLaunchAtLogin()
         }
@@ -419,11 +422,21 @@ final class AppState {
         userPresets.removeAll { $0.name == trimmed }
         userPresets.append(EQPreset(name: trimmed, preGainDB: settings.preGainDB, bands: settings.bands))
         PresetStore.save(userPresets)
+        activePresetName = matchingPresetName()
     }
 
     func deletePreset(_ preset: EQPreset) {
         userPresets.removeAll { $0.id == preset.id }
         PresetStore.save(userPresets)
+        activePresetName = matchingPresetName()
+    }
+
+    /// Name of the preset the current settings exactly equal, if any — the
+    /// menu shows it until the user tweaks a band or the pre-gain.
+    private func matchingPresetName() -> String? {
+        (userPresets + BuiltInPresets.all)
+            .first { $0.bands == settings.bands && $0.preGainDB == settings.preGainDB }?
+            .name
     }
 
     private func applyLaunchAtLogin() {

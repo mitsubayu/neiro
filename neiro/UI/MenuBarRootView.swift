@@ -96,8 +96,8 @@ struct MenuBarRootView: View {
                         isNamingPreset = true
                     }
                 } label: {
-                    Label("Presets", systemImage: "square.stack.3d.up")
-                        .font(.caption)
+                    Label(appState.activePresetName ?? "Presets", systemImage: "square.stack.3d.up")
+                        .font(appState.activePresetName == nil ? .caption : .caption.bold())
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
