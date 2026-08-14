@@ -36,49 +36,10 @@ final class AppState {
     private(set) var nowPlayingArtist: String?
     private(set) var nowPlayingArtwork: NSImage?
 
-    static let titleWindow = 16
-
-    /// Menu bar text: "曲名 · ALAC 96kHz/24bit". Long titles marquee: hold at
-    /// the start, scroll one character at a time to the end, snap back, hold
-    /// again (driven by `marqueeTask` updating `marqueeOffset`).
-    var menuBarLabel: String {
-        var parts: [String] = []
-        if let title = nowPlayingTitle, !title.isEmpty {
-            if title.count > Self.titleWindow {
-                let maxOffset = title.count - Self.titleWindow
-                let start = title.index(title.startIndex, offsetBy: min(marqueeOffset, maxOffset))
-                let end = title.index(start, offsetBy: Self.titleWindow)
-                parts.append(String(title[start..<end]))
-            } else {
-                parts.append(title)
-            }
-        }
-        let codec = trackCodec.map { "\($0) " } ?? ""
-        parts.append(codec + formatLabel)
-        return parts.joined(separator: " · ")
-    }
-
-    private func restartMarqueeIfNeeded() {
-        guard nowPlayingTitle != marqueeTitle else { return }
-        marqueeTitle = nowPlayingTitle
-        marqueeTask?.cancel()
-        marqueeOffset = 0
-        guard let title = nowPlayingTitle, title.count > Self.titleWindow else { return }
-        let maxOffset = title.count - Self.titleWindow
-        marqueeTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                var offset = 0
-                while offset < maxOffset, !Task.isCancelled {
-                    offset += 1
-                    self?.marqueeOffset = offset
-                    try? await Task.sleep(for: .milliseconds(150))
-                }
-                guard !Task.isCancelled else { return }
-                try? await Task.sleep(for: .seconds(1))
-                self?.marqueeOffset = 0
-            }
-        }
+    /// Codec + format suffix for the menu bar ("ALAC 96kHz/24bit"). The
+    /// scrolling title itself is rendered by StatusMarqueeView.
+    var menuBarSuffix: String {
+        (trackCodec.map { "\($0) " } ?? "") + formatLabel
     }
 
     /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
@@ -109,9 +70,6 @@ final class AppState {
     @ObservationIgnored private var muteCheckInFlight = false
     @ObservationIgnored private var nowPlayingTask: Task<Void, Never>?
     @ObservationIgnored private var nowPlayingObserver: NSObjectProtocol?
-    @ObservationIgnored private var marqueeTask: Task<Void, Never>?
-    @ObservationIgnored private var marqueeTitle: String?
-    private(set) var marqueeOffset = 0
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
 
     init() {
@@ -432,7 +390,6 @@ final class AppState {
             Task { @MainActor [weak self] in
                 self?.nowPlayingTitle = title
                 self?.nowPlayingArtist = artist
-                self?.restartMarqueeIfNeeded()
                 self?.refreshNowPlaying(havePayloadTitle: title != nil)
             }
         }
@@ -458,7 +415,6 @@ final class AppState {
                 self.nowPlayingTitle = nil
                 self.nowPlayingArtist = nil
             }
-            self.restartMarqueeIfNeeded()
             self.nowPlayingArtwork = result.1 ? NSImage(contentsOfFile: artworkPath) : nil
         }
     }

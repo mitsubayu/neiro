@@ -11,10 +11,11 @@ struct NeiroApp: App {
                 .environment(appState)
                 .onAppear { appDelegate.appState = appState }
         } label: {
-            Image(systemName: "slider.horizontal.3")
-            if appState.status == .running {
-                Text(appState.menuBarLabel)
-            }
+            // AppKit-backed so the marquee runs as a Core Animation loop on
+            // the render server — no SwiftUI re-render per frame (animating
+            // the label with TimelineView pinned the main thread).
+            MarqueeLabel(title: appState.status == .running ? (appState.nowPlayingTitle ?? "") : "",
+                         suffix: appState.status == .running ? appState.menuBarSuffix : "")
         }
         .menuBarExtraStyle(.window)
     }

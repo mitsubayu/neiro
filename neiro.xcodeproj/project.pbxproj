@@ -10,6 +10,7 @@
 		0252BBEFEF76F463F8B28775 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF606DE163CAE26CCAA1D7 /* EQPreset.swift */; };
 		0580F123A7C13C7502F4C1A6 /* BiquadKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */; };
 		08B25CF586F3B379AA526C57 /* CoreAudioUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611AC8C368068836E205F06F /* CoreAudioUtils.swift */; };
+		0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B393FA4F14921B4956CD079 /* StatusItemController.swift */; };
 		2B2DF20CDB98449D99DAB190 /* NeiroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50EDEA29D6145FC019262B11 /* NeiroApp.swift */; };
 		2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */; };
 		316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0769917D43131ABBEAC7ABAA /* SettingsStore.swift */; };
@@ -50,6 +51,7 @@
 		5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRootView.swift; sourceTree = "<group>"; };
 		611AC8C368068836E205F06F /* CoreAudioUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioUtils.swift; sourceTree = "<group>"; };
 		679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCurveView.swift; sourceTree = "<group>"; };
+		6B393FA4F14921B4956CD079 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		70635B0CAEF3000882BBE10F /* neiroTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = neiroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		82485437C1862615478D1401 /* EQBandRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQBandRow.swift; sourceTree = "<group>"; };
 		9E160B23077B14806E1E35A1 /* EQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQProcessor.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 				5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */,
 				42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */,
 				679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */,
+				6B393FA4F14921B4956CD079 /* StatusItemController.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -259,6 +262,7 @@
 				AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */,
 				2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */,
 				316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */,
+				0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */,
 				A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
