@@ -121,12 +121,24 @@ final class AppState {
     private func startEngine(resumePlaybackAfterStart: Bool = false, restartTrackFromHead: Bool = false) {
         musicWaitTask?.cancel()
 
+        // A switch sequence that can't reach its resume closure must release
+        // the in-progress flag, or evaluations deadlock on it forever.
+        func abandonSwitch() {
+            if resumePlaybackAfterStart {
+                processor.setMuted(false)
+                isSwitchingRate = false
+                MusicRemote.play()
+            }
+        }
+
         guard let musicProcess = MusicProcessLocator.musicProcessObjectID() else {
+            abandonSwitch()
             status = .waitingForMusic
             waitForMusic()
             return
         }
         guard let outputUID = resolveOutputUID() else {
+            abandonSwitch()
             status = .error("No output device available")
             return
         }
@@ -229,6 +241,7 @@ final class AppState {
     /// - Mid-track (>5s) → this is Music pre-rolling the *next* item at a
     ///   different rate; defer and re-check until the boundary passes.
     private func evaluateRateSwitch() {
+        Self.logger.info("evaluate: track=\(self.lastTrackRate ?? 0) engine=\(self.engineSampleRate) status=\(String(describing: self.status)) follow=\(self.settings.followTrackRate) switching=\(self.isSwitchingRate)")
         guard let rate = lastTrackRate, settings.isEnabled, settings.followTrackRate,
               status == .running, rate != engineSampleRate else {
             // No switch needed after all (e.g. rate flapped back) — make sure
@@ -240,12 +253,12 @@ final class AppState {
             scheduleRateSwitchEvaluation()
             return
         }
-        isSwitchingRate = true
+        beginSwitching()
         Task { @MainActor [weak self] in
             guard let self else { return }
             let state = await Task.detached { MusicRemote.playerState() }.value
             guard state == "playing" else {
-                Self.logger.info("switching silently to \(rate) (player \(state ?? "unreachable"))")
+                Self.logger.info("switching silently (player \(state ?? "unreachable"))")
                 self.processor.setMuted(false)
                 self.startEngine()
                 self.isSwitchingRate = false
@@ -253,15 +266,30 @@ final class AppState {
             }
             let position = await Task.detached { MusicRemote.playerPosition() }.value ?? 0
             guard position <= 5 else {
-                Self.logger.info("deferring switch to \(rate): mid-track at \(position)s")
+                Self.logger.info("deferring switch: mid-track at \(position)s")
                 self.processor.setMuted(false)
                 self.isSwitchingRate = false
                 self.scheduleRateSwitchEvaluation(afterMilliseconds: 2000)
                 return
             }
-            Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate), restarting track from head (was at \(position)s)")
+            Self.logger.info("switching engine \(self.engineSampleRate), restarting track from head (was at \(position)s)")
             await Task.detached { MusicRemote.pause() }.value
             self.startEngine(resumePlaybackAfterStart: true, restartTrackFromHead: true)
+        }
+    }
+
+    /// Marks the switch in progress with a failsafe: if anything in the
+    /// pause→rebuild→resume chain dies without clearing the flag, every later
+    /// evaluation would silently reschedule forever. Reset it after 10s.
+    private func beginSwitching() {
+        isSwitchingRate = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard let self, self.isSwitchingRate else { return }
+            Self.logger.error("switch watchdog fired: clearing stuck isSwitchingRate")
+            self.isSwitchingRate = false
+            self.processor.setMuted(false)
+            self.scheduleRateSwitchEvaluation()
         }
     }
 
