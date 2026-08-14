@@ -13,7 +13,12 @@ struct NeiroApp: App {
         } label: {
             Image(systemName: "slider.horizontal.3")
             if appState.status == .running {
-                Text(appState.menuBarLabel)
+                if let title = appState.nowPlayingTitle, !title.isEmpty {
+                    MarqueeText(text: title, anchor: appState.titleChangedAt)
+                    Text("· \(appState.menuBarSuffix)")
+                } else {
+                    Text(appState.menuBarSuffix)
+                }
             }
         }
         .menuBarExtraStyle(.window)
