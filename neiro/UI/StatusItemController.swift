@@ -139,9 +139,10 @@ final class StatusMarqueeView: NSView {
     private let iconView = NSImageView()
     private let titleClipView = NSView()
     private let titleLayer = CALayer()
-    private let suffixLabel = NSTextField(labelWithString: "")
+    private let suffixView = NSView()
     private var titleWidth: CGFloat = 0
     private var loopWidth: CGFloat = 0
+    private var suffixWidth: CGFloat = 0
     private var titleDisplayString = ""
     private var currentTitle = ""
     private var currentSuffix = ""
@@ -164,8 +165,6 @@ final class StatusMarqueeView: NSView {
         // Follow the menu bar's effective appearance (template symbols in a
         // plain NSImageView don't auto-tint like a status button image).
         iconView.contentTintColor = .labelColor
-        suffixLabel.textColor = .labelColor
-        suffixLabel.font = Self.font
         titleClipView.wantsLayer = true
         titleClipView.layer?.masksToBounds = true
         titleLayer.anchorPoint = .zero
@@ -173,10 +172,11 @@ final class StatusMarqueeView: NSView {
         titleLayer.contentsScale = 2  // corrected from the window's backing scale below
         titleClipView.layer?.addSublayer(titleLayer)
         titleClipView.autoresizingMask = []
-        suffixLabel.autoresizingMask = []
+        suffixView.wantsLayer = true
+        suffixView.autoresizingMask = []
         addSubview(iconView)
         addSubview(titleClipView)
-        addSubview(suffixLabel)
+        addSubview(suffixView)
     }
 
     override func viewDidMoveToWindow() {
@@ -200,19 +200,13 @@ final class StatusMarqueeView: NSView {
     }
 
     /// AppKit renders the string into an image (same crisp text rasterizer
-    /// as real labels — CATextLayer's own drawing is visibly softer) and the
-    /// layer just scrolls that bitmap. Re-run on appearance changes so the
-    /// baked-in labelColor matches light/dark mode.
-    private func rebuildTitleLayerString() {
-        guard !titleDisplayString.isEmpty else {
-            titleLayer.contents = nil
-            return
-        }
-        let width = loopWidth > 0 ? loopWidth + titleWidth : titleWidth
+    /// as real labels — CATextLayer's own drawing is visibly softer). Both
+    /// the title and the suffix go through this renderer into equal-height
+    /// boxes, so their baselines line up exactly.
+    private func renderText(_ text: String, width: CGFloat) -> NSImage {
         let size = NSSize(width: max(width, 1), height: Self.lineHeight)
-        let text = titleDisplayString
         let appearance = effectiveAppearance
-        let image = NSImage(size: size, flipped: false) { rect in
+        return NSImage(size: size, flipped: false) { rect in
             appearance.performAsCurrentDrawingAppearance {
                 NSAttributedString(
                     string: text,
@@ -221,7 +215,20 @@ final class StatusMarqueeView: NSView {
             }
             return true
         }
-        titleLayer.contents = image
+    }
+
+    /// Re-run on appearance changes so the baked-in labelColor matches
+    /// light/dark mode.
+    private func rebuildTitleLayerString() {
+        if titleDisplayString.isEmpty {
+            titleLayer.contents = nil
+        } else {
+            let width = loopWidth > 0 ? loopWidth + titleWidth : titleWidth
+            titleLayer.contents = renderText(titleDisplayString, width: width)
+        }
+        suffixView.layer?.contents = currentSuffix.isEmpty
+            ? nil
+            : renderText(currentSuffix, width: suffixWidth)
     }
 
     @available(*, unavailable)
@@ -240,7 +247,7 @@ final class StatusMarqueeView: NSView {
             width += Self.gap + Self.titleMaxWidth
         }
         if !currentSuffix.isEmpty {
-            width += Self.gap + ceil(suffixLabel.frame.width)
+            width += Self.gap + suffixWidth
         }
         return width
     }
@@ -265,15 +272,14 @@ final class StatusMarqueeView: NSView {
             loopWidth = 0
             titleDisplayString = title
         }
+        suffixWidth = measure(suffix)
         rebuildTitleLayerString()
         titleLayer.frame = CGRect(x: 0, y: 0,
                                   width: loopWidth > 0 ? loopWidth + titleWidth : titleWidth,
                                   height: Self.lineHeight)
 
-        suffixLabel.stringValue = suffix
-        suffixLabel.sizeToFit()
         titleClipView.isHidden = title.isEmpty
-        suffixLabel.isHidden = suffix.isEmpty
+        suffixView.isHidden = suffix.isEmpty
         needsLayout = true
         restartAnimation()
     }
@@ -293,9 +299,10 @@ final class StatusMarqueeView: NSView {
         }
         if !currentSuffix.isEmpty {
             x += Self.gap
-            let labelSize = suffixLabel.frame.size
-            suffixLabel.frame = NSRect(x: x, y: (height - labelSize.height) / 2,
-                                       width: labelSize.width, height: labelSize.height)
+            // Same height box and same y as the title window → identical
+            // baseline.
+            suffixView.frame = NSRect(x: round(x), y: round((height - Self.lineHeight) / 2),
+                                      width: suffixWidth, height: Self.lineHeight)
         }
     }
 
