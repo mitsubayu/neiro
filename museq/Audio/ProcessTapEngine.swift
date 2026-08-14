@@ -31,7 +31,7 @@ final class ProcessTapEngine {
         dispatchPrecondition(condition: .onQueue(controlQueue))
         stopLocked()
 
-        let description = CATapDescription(stereoMixdownOfProcesses: [NSNumber(value: musicProcess)])
+        let description = CATapDescription(stereoMixdownOfProcesses: [musicProcess])
         description.name = "museq-tap"
         description.muteBehavior = .mutedWhenTapped
         description.isPrivate = true

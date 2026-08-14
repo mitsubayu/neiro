@@ -38,5 +38,6 @@ targets:
       - target: museq
     settings:
       base:
+        GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/museq.app/Contents/MacOS/museq
         BUNDLE_LOADER: $(TEST_HOST)

@@ -1,0 +1,487 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E1542273698BD977A833655 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77C3D30B2E92B510ABE0F1D /* MenuBarRootView.swift */; };
+		168571B4CC3AD5F0282B1B5C /* MusicProcessLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F58B8F81DC431AE1898121CC /* MusicProcessLocator.swift */; };
+		2FD0B5957BC87D80BDE877E1 /* BiquadKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B8A62A44415F06F99BC963 /* BiquadKernel.swift */; };
+		360A362E039CEC1C2D8227F3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6AB09B1F7C786EDFDAB165 /* AppState.swift */; };
+		3DE88D657DD61134A5EC5825 /* OutputDeviceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B1220A1B4C049A71F368E3 /* OutputDeviceMonitor.swift */; };
+		3E8E0FDA00ED9C7706D5653A /* EQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC0FC411DB19395781946E1 /* EQProcessor.swift */; };
+		6E98AFD2BD99C557B7A0AD9F /* BiquadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E70A239A3A8C0700A2BCD80 /* BiquadTests.swift */; };
+		76733D7BB0A592C48C5026B6 /* EQModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAD72E368F7DC6465C3B1A4 /* EQModel.swift */; };
+		8DCBA267E1145A374E3385CA /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A4AB9E327726A9C5FC84F7 /* SettingsStore.swift */; };
+		B3CCF25890E8368385521706 /* ProcessTapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6B2AE591150D5DCFCD03AC /* ProcessTapEngine.swift */; };
+		B5E0B855E238B07A5584ACD7 /* ResponseCurveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC3DBF004CC59FABEAD718D /* ResponseCurveView.swift */; };
+		B7346EAE0B4C7F8990510F10 /* MuseqApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E1446257B0B607495ADAFC /* MuseqApp.swift */; };
+		BD6B6190FFFB4A206F0BFA59 /* OutputDevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40DDB41D83C084E33FA3B0F /* OutputDevicePicker.swift */; };
+		E8573A7379B93DBA66D0D9B5 /* EQBandRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507179CB4677A683516FF778 /* EQBandRow.swift */; };
+		EE9BFFD80D128695FBEE02DF /* CoreAudioUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB9A8F16BC24DE042DAE911E /* CoreAudioUtils.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9AB159A9688855321EB57D48 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F66ED5BD4771F4A655CEEFFE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ABF21E18FCC8363D1D8522EF;
+			remoteInfo = museq;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		11E1446257B0B607495ADAFC /* MuseqApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseqApp.swift; sourceTree = "<group>"; };
+		507179CB4677A683516FF778 /* EQBandRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQBandRow.swift; sourceTree = "<group>"; };
+		5AC3DBF004CC59FABEAD718D /* ResponseCurveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCurveView.swift; sourceTree = "<group>"; };
+		5B6AB09B1F7C786EDFDAB165 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		5CC97FFC28D8A5E47957279E /* museqTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = museqTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E6B2AE591150D5DCFCD03AC /* ProcessTapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapEngine.swift; sourceTree = "<group>"; };
+		6E70A239A3A8C0700A2BCD80 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
+		73B1220A1B4C049A71F368E3 /* OutputDeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDeviceMonitor.swift; sourceTree = "<group>"; };
+		74FCB55AEA638787694506F1 /* museq.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = museq.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		88B8A62A44415F06F99BC963 /* BiquadKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadKernel.swift; sourceTree = "<group>"; };
+		B40DDB41D83C084E33FA3B0F /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
+		B77C3D30B2E92B510ABE0F1D /* MenuBarRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRootView.swift; sourceTree = "<group>"; };
+		C0A4AB9E327726A9C5FC84F7 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		C8B79E9C3BAF518AB3D5E113 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		CB9A8F16BC24DE042DAE911E /* CoreAudioUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioUtils.swift; sourceTree = "<group>"; };
+		DFAD72E368F7DC6465C3B1A4 /* EQModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQModel.swift; sourceTree = "<group>"; };
+		F58B8F81DC431AE1898121CC /* MusicProcessLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProcessLocator.swift; sourceTree = "<group>"; };
+		FFC0FC411DB19395781946E1 /* EQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQProcessor.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		043F4336549BAAFF838F2C0B /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				C0A4AB9E327726A9C5FC84F7 /* SettingsStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		0D8D7231C132B3EF81E380E4 /* DSP */ = {
+			isa = PBXGroup;
+			children = (
+				88B8A62A44415F06F99BC963 /* BiquadKernel.swift */,
+				DFAD72E368F7DC6465C3B1A4 /* EQModel.swift */,
+				FFC0FC411DB19395781946E1 /* EQProcessor.swift */,
+			);
+			path = DSP;
+			sourceTree = "<group>";
+		};
+		10061C35BB77E338E1B727C4 /* museq */ = {
+			isa = PBXGroup;
+			children = (
+				C8B79E9C3BAF518AB3D5E113 /* Info.plist */,
+				C24DAB67664DA71061566998 /* App */,
+				A12D892A53E2F30197311F44 /* Audio */,
+				0D8D7231C132B3EF81E380E4 /* DSP */,
+				043F4336549BAAFF838F2C0B /* Persistence */,
+				2DD0A5EF1518FDAFBDD976F5 /* UI */,
+			);
+			path = museq;
+			sourceTree = "<group>";
+		};
+		2DD0A5EF1518FDAFBDD976F5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				507179CB4677A683516FF778 /* EQBandRow.swift */,
+				B77C3D30B2E92B510ABE0F1D /* MenuBarRootView.swift */,
+				B40DDB41D83C084E33FA3B0F /* OutputDevicePicker.swift */,
+				5AC3DBF004CC59FABEAD718D /* ResponseCurveView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		3564E558C00FB1DF8710C9F3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				74FCB55AEA638787694506F1 /* museq.app */,
+				5CC97FFC28D8A5E47957279E /* museqTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7629D637993E3389BE414FA9 /* museqTests */ = {
+			isa = PBXGroup;
+			children = (
+				6E70A239A3A8C0700A2BCD80 /* BiquadTests.swift */,
+			);
+			path = museqTests;
+			sourceTree = "<group>";
+		};
+		A12D892A53E2F30197311F44 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				CB9A8F16BC24DE042DAE911E /* CoreAudioUtils.swift */,
+				F58B8F81DC431AE1898121CC /* MusicProcessLocator.swift */,
+				73B1220A1B4C049A71F368E3 /* OutputDeviceMonitor.swift */,
+				5E6B2AE591150D5DCFCD03AC /* ProcessTapEngine.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		C24DAB67664DA71061566998 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5B6AB09B1F7C786EDFDAB165 /* AppState.swift */,
+				11E1446257B0B607495ADAFC /* MuseqApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C662154A1B42AFF29260ACD7 = {
+			isa = PBXGroup;
+			children = (
+				10061C35BB77E338E1B727C4 /* museq */,
+				7629D637993E3389BE414FA9 /* museqTests */,
+				3564E558C00FB1DF8710C9F3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2B390E10F501E73408C7F646 /* museqTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 015E8DEA0E4CE483CCEC0B4B /* Build configuration list for PBXNativeTarget "museqTests" */;
+			buildPhases = (
+				331151FA366BE257555C1FFC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0A3A0E47930DF906D4BB5DE /* PBXTargetDependency */,
+			);
+			name = museqTests;
+			packageProductDependencies = (
+			);
+			productName = museqTests;
+			productReference = 5CC97FFC28D8A5E47957279E /* museqTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		ABF21E18FCC8363D1D8522EF /* museq */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CB1F73C9DA8517B2F8A7DABF /* Build configuration list for PBXNativeTarget "museq" */;
+			buildPhases = (
+				3FAFE3B2616CB37AF5C59F64 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = museq;
+			packageProductDependencies = (
+			);
+			productName = museq;
+			productReference = 74FCB55AEA638787694506F1 /* museq.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F66ED5BD4771F4A655CEEFFE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					2B390E10F501E73408C7F646 = {
+						ProvisioningStyle = Manual;
+					};
+					ABF21E18FCC8363D1D8522EF = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 91272F02239BE92A2139D245 /* Build configuration list for PBXProject "museq" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C662154A1B42AFF29260ACD7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3564E558C00FB1DF8710C9F3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ABF21E18FCC8363D1D8522EF /* museq */,
+				2B390E10F501E73408C7F646 /* museqTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		331151FA366BE257555C1FFC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E98AFD2BD99C557B7A0AD9F /* BiquadTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3FAFE3B2616CB37AF5C59F64 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				360A362E039CEC1C2D8227F3 /* AppState.swift in Sources */,
+				2FD0B5957BC87D80BDE877E1 /* BiquadKernel.swift in Sources */,
+				EE9BFFD80D128695FBEE02DF /* CoreAudioUtils.swift in Sources */,
+				E8573A7379B93DBA66D0D9B5 /* EQBandRow.swift in Sources */,
+				76733D7BB0A592C48C5026B6 /* EQModel.swift in Sources */,
+				3E8E0FDA00ED9C7706D5653A /* EQProcessor.swift in Sources */,
+				0E1542273698BD977A833655 /* MenuBarRootView.swift in Sources */,
+				B7346EAE0B4C7F8990510F10 /* MuseqApp.swift in Sources */,
+				168571B4CC3AD5F0282B1B5C /* MusicProcessLocator.swift in Sources */,
+				3DE88D657DD61134A5EC5825 /* OutputDeviceMonitor.swift in Sources */,
+				BD6B6190FFFB4A206F0BFA59 /* OutputDevicePicker.swift in Sources */,
+				B3CCF25890E8368385521706 /* ProcessTapEngine.swift in Sources */,
+				B5E0B855E238B07A5584ACD7 /* ResponseCurveView.swift in Sources */,
+				8DCBA267E1145A374E3385CA /* SettingsStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A0A3A0E47930DF906D4BB5DE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ABF21E18FCC8363D1D8522EF /* museq */;
+			targetProxy = 9AB159A9688855321EB57D48 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0454671417A50DD93C60045B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.museqTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/museq.app/Contents/MacOS/museq";
+			};
+			name = Release;
+		};
+		09BE056FA543920A358B1455 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = museq/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.museq;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4D40F99DC37E53309AF91D99 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = museq/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.museq;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		E49B763E22ED9EB95974EC97 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mitsuba.museqTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/museq.app/Contents/MacOS/museq";
+			};
+			name = Debug;
+		};
+		E5BF20F5A34F86F8F0C564D7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		EC890C2803B375ECDBE81B0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		015E8DEA0E4CE483CCEC0B4B /* Build configuration list for PBXNativeTarget "museqTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E49B763E22ED9EB95974EC97 /* Debug */,
+				0454671417A50DD93C60045B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		91272F02239BE92A2139D245 /* Build configuration list for PBXProject "museq" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E5BF20F5A34F86F8F0C564D7 /* Debug */,
+				EC890C2803B375ECDBE81B0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CB1F73C9DA8517B2F8A7DABF /* Build configuration list for PBXNativeTarget "museq" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D40F99DC37E53309AF91D99 /* Debug */,
+				09BE056FA543920A358B1455 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F66ED5BD4771F4A655CEEFFE /* Project object */;
+}
