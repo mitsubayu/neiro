@@ -22,7 +22,6 @@
 		A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */; };
 		A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */; };
 		AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */; };
-		CF702C2AC3B96238A1D1F663 /* MarqueeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAE141E1C03BC9418D63151 /* MarqueeText.swift */; };
 		D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E437D51DE4866987DCECAA8F /* EQModel.swift */; };
 		E28F5A9CF65196D1659D587D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070094852EBD4F24EF30E1B9 /* AppState.swift */; };
 		E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */; };
@@ -48,7 +47,6 @@
 		42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
 		4A0F8686A7A6A602312FADE9 /* neiro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = neiro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50EDEA29D6145FC019262B11 /* NeiroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeiroApp.swift; sourceTree = "<group>"; };
-		5AAE141E1C03BC9418D63151 /* MarqueeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeText.swift; sourceTree = "<group>"; };
 		5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRootView.swift; sourceTree = "<group>"; };
 		611AC8C368068836E205F06F /* CoreAudioUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioUtils.swift; sourceTree = "<group>"; };
 		679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCurveView.swift; sourceTree = "<group>"; };
@@ -148,7 +146,6 @@
 			isa = PBXGroup;
 			children = (
 				82485437C1862615478D1401 /* EQBandRow.swift */,
-				5AAE141E1C03BC9418D63151 /* MarqueeText.swift */,
 				5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */,
 				42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */,
 				679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */,
@@ -253,7 +250,6 @@
 				D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */,
 				0252BBEFEF76F463F8B28775 /* EQPreset.swift in Sources */,
 				34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */,
-				CF702C2AC3B96238A1D1F663 /* MarqueeText.swift in Sources */,
 				A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */,
 				72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */,
 				8187D61F53EC56CE18AE842C /* MusicRemote.swift in Sources */,
