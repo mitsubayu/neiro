@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import ServiceManagement
 import os
 
 @MainActor
@@ -28,6 +29,7 @@ final class AppState {
     private(set) var status: EngineStatus = .disabled
     private(set) var engineSampleRate: Double = 44_100
     private(set) var trackBitDepth: Int?
+    private(set) var userPresets: [EQPreset] = PresetStore.load()
 
     /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
     /// the menu bar next to the icon and in the status row.
@@ -68,6 +70,7 @@ final class AppState {
         }
 
         deviceMonitor.onChange = { [weak self] in self?.handleDeviceListChange() }
+        applyLaunchAtLogin()
         rateDetector.onRateDetected = { [weak self] rate in self?.handleDetectedTrackRate(rate) }
         rateDetector.onBitDepthDetected = { [weak self] rate, depth in
             guard let self else { return }
@@ -90,6 +93,9 @@ final class AppState {
         processor.update(settings: settings)
         scheduleSave()
         updateRateDetectorState()
+        if oldValue.launchAtLogin != settings.launchAtLogin {
+            applyLaunchAtLogin()
+        }
 
         if oldValue.isEnabled != settings.isEnabled {
             settings.isEnabled ? startEngine() : stopEngine()
@@ -347,6 +353,39 @@ final class AppState {
                     return
                 }
             }
+        }
+    }
+
+    // MARK: - Presets & login item
+
+    func applyPreset(_ preset: EQPreset) {
+        settings.bands = preset.bands
+        settings.preGainDB = preset.preGainDB
+    }
+
+    func saveCurrentAsPreset(named name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        userPresets.removeAll { $0.name == trimmed }
+        userPresets.append(EQPreset(name: trimmed, preGainDB: settings.preGainDB, bands: settings.bands))
+        PresetStore.save(userPresets)
+    }
+
+    func deletePreset(_ preset: EQPreset) {
+        userPresets.removeAll { $0.id == preset.id }
+        PresetStore.save(userPresets)
+    }
+
+    private func applyLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        do {
+            if settings.launchAtLogin, service.status != .enabled {
+                try service.register()
+            } else if !settings.launchAtLogin, service.status == .enabled {
+                try service.unregister()
+            }
+        } catch {
+            Self.logger.warning("launch-at-login update failed: \(error.localizedDescription)")
         }
     }
 

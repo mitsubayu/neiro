@@ -26,8 +26,12 @@ enum MusicRemote {
         run("tell application \"Music\" to set player position to \(seconds)")
     }
 
+    /// osascript can block indefinitely — most notably while the Automation
+    /// consent dialog is unanswered, or when Music stops servicing Apple
+    /// Events. A hard timeout keeps the rate-switch pipeline from hanging;
+    /// callers treat nil as "Music unreachable" and degrade gracefully.
     @discardableResult
-    private static func run(_ script: String) -> String? {
+    private static func run(_ script: String, timeout: TimeInterval = 3) -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", script]
@@ -39,8 +43,15 @@ enum MusicRemote {
         } catch {
             return nil
         }
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            usleep(50_000)
+        }
+        if process.isRunning {
+            process.terminate()
+            return nil
+        }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
         guard process.terminationStatus == 0 else { return nil }
         return String(data: data, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines)

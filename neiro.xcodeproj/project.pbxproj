@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0252BBEFEF76F463F8B28775 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CF606DE163CAE26CCAA1D7 /* EQPreset.swift */; };
 		0580F123A7C13C7502F4C1A6 /* BiquadKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */; };
 		08B25CF586F3B379AA526C57 /* CoreAudioUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611AC8C368068836E205F06F /* CoreAudioUtils.swift */; };
 		2B2DF20CDB98449D99DAB190 /* NeiroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50EDEA29D6145FC019262B11 /* NeiroApp.swift */; };
@@ -55,6 +56,7 @@
 		A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProcessLocator.swift; sourceTree = "<group>"; };
 		C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDeviceMonitor.swift; sourceTree = "<group>"; };
 		C6F4A2437E9844E56B60F534 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D1CF606DE163CAE26CCAA1D7 /* EQPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQPreset.swift; sourceTree = "<group>"; };
 		E437D51DE4866987DCECAA8F /* EQModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQModel.swift; sourceTree = "<group>"; };
 		ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadKernel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -65,6 +67,7 @@
 			children = (
 				ED955BB13B8691150B4B46F4 /* BiquadKernel.swift */,
 				E437D51DE4866987DCECAA8F /* EQModel.swift */,
+				D1CF606DE163CAE26CCAA1D7 /* EQPreset.swift */,
 				9E160B23077B14806E1E35A1 /* EQProcessor.swift */,
 			);
 			path = DSP;
@@ -245,6 +248,7 @@
 				08B25CF586F3B379AA526C57 /* CoreAudioUtils.swift in Sources */,
 				A0CC43B3C88BE60A91834189 /* EQBandRow.swift in Sources */,
 				D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */,
+				0252BBEFEF76F463F8B28775 /* EQPreset.swift in Sources */,
 				34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */,
 				A8E57969CF2265F595D979A0 /* MenuBarRootView.swift in Sources */,
 				72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */,

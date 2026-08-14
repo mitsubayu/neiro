@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MenuBarRootView: View {
     @Environment(AppState.self) private var appState
+    @State private var isNamingPreset = false
+    @State private var presetName = ""
 
     var body: some View {
         @Bindable var appState = appState
@@ -32,6 +34,44 @@ struct MenuBarRootView: View {
                     .font(.caption)
             }
             .toggleStyle(.checkbox)
+
+            HStack {
+                Menu {
+                    Section("Built-in") {
+                        ForEach(BuiltInPresets.all) { preset in
+                            Button(preset.name) { appState.applyPreset(preset) }
+                        }
+                    }
+                    if !appState.userPresets.isEmpty {
+                        Section("My Presets") {
+                            ForEach(appState.userPresets) { preset in
+                                Menu(preset.name) {
+                                    Button("Apply") { appState.applyPreset(preset) }
+                                    Button("Delete", role: .destructive) { appState.deletePreset(preset) }
+                                }
+                            }
+                        }
+                    }
+                    Divider()
+                    Button("Save Current as Preset…") {
+                        presetName = ""
+                        isNamingPreset = true
+                    }
+                } label: {
+                    Label("Presets", systemImage: "square.stack.3d.up")
+                        .font(.caption)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                Spacer()
+            }
+            .alert("Save Preset", isPresented: $isNamingPreset) {
+                TextField("Preset name", text: $presetName)
+                Button("Save") { appState.saveCurrentAsPreset(named: presetName) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Saves the current bands and pre-gain.")
+            }
 
             ResponseCurveView(bands: appState.settings.bands,
                               preGainDB: appState.settings.preGainDB,
@@ -67,6 +107,9 @@ struct MenuBarRootView: View {
                     }
                     appState.settings.preGainDB = 0
                 }
+                Spacer()
+                Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
+                    .toggleStyle(.checkbox)
                 Spacer()
                 Button("Quit neiro") { NSApplication.shared.terminate(nil) }
             }

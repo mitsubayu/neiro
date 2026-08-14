@@ -20,6 +20,7 @@ struct EQSettings: Codable, Equatable {
     var preGainDB: Double = 0
     var outputDeviceUID: String?
     var followTrackRate = true
+    var launchAtLogin = true
     var bands: [EQBand]
 
     static let maxBands = 16
@@ -39,7 +40,7 @@ struct EQSettings: Codable, Equatable {
 // still load instead of falling back to defaults.
 extension EQSettings {
     private enum CodingKeys: String, CodingKey {
-        case isEnabled, preGainDB, outputDeviceUID, followTrackRate, bands
+        case isEnabled, preGainDB, outputDeviceUID, followTrackRate, launchAtLogin, bands
     }
 
     init(from decoder: Decoder) throws {
@@ -48,6 +49,7 @@ extension EQSettings {
         preGainDB = try container.decodeIfPresent(Double.self, forKey: .preGainDB) ?? 0
         outputDeviceUID = try container.decodeIfPresent(String.self, forKey: .outputDeviceUID)
         followTrackRate = try container.decodeIfPresent(Bool.self, forKey: .followTrackRate) ?? true
+        launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
         bands = try container.decodeIfPresent([EQBand].self, forKey: .bands) ?? EQSettings.makeDefault().bands
     }
 }

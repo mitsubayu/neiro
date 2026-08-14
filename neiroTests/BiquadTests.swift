@@ -89,6 +89,16 @@ struct BiquadTests {
         #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: "Input format:  2 ch,  96000 Hz, qlac") == nil)
     }
 
+    @Test func builtInPresetsAreWellFormed() {
+        #expect(!BuiltInPresets.all.isEmpty)
+        for preset in BuiltInPresets.all {
+            #expect(preset.bands.count == 10)
+            #expect(preset.bands.allSatisfy { abs($0.gainDB) <= 24 })
+        }
+        let flat = BuiltInPresets.all.first { $0.name == "Flat" }
+        #expect(flat?.bands.allSatisfy { $0.gainDB == 0 } == true)
+    }
+
     @Test func settingsDecodeWithoutNewerKeys() throws {
         let legacy = #"{"isEnabled":true,"preGainDB":-3}"#
         let settings = try JSONDecoder().decode(EQSettings.self, from: Data(legacy.utf8))
