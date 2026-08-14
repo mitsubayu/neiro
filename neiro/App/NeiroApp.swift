@@ -2,27 +2,26 @@ import SwiftUI
 
 @main
 struct NeiroApp: App {
-    @State private var appState = AppState()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    // The status item is pure AppKit (StatusItemController): MenuBarExtra's
+    // label snapshots custom views once, so neither the Core Animation
+    // marquee nor dynamic width survive there. This scene is never shown.
     var body: some Scene {
-        MenuBarExtra {
-            MenuBarRootView()
-                .environment(appState)
-                .onAppear { appDelegate.appState = appState }
-        } label: {
-            // AppKit-backed so the marquee runs as a Core Animation loop on
-            // the render server — no SwiftUI re-render per frame (animating
-            // the label with TimelineView pinned the main thread).
-            MarqueeLabel(title: appState.status == .running ? (appState.nowPlayingTitle ?? "") : "",
-                         suffix: appState.status == .running ? appState.menuBarSuffix : "")
-        }
-        .menuBarExtraStyle(.window)
+        Settings { EmptyView() }
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    var appState: AppState?
+    private var appState: AppState?
+    private var statusItemController: StatusItemController?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let state = AppState()
+        appState = state
+        statusItemController = StatusItemController(appState: state)
+    }
 
     // Destroying the tap un-mutes Music.app; without this, quitting neiro
     // mid-session leaves Music silenced until it relaunches.

@@ -1,31 +1,131 @@
 import AppKit
+import Observation
 import SwiftUI
+import os
 
-/// SwiftUI wrapper hosting StatusMarqueeView inside the MenuBarExtra label.
-/// The view is static as far as SwiftUI is concerned; the scrolling happens
-/// in a repeating Core Animation keyframe animation on the render server.
-struct MarqueeLabel: NSViewRepresentable {
-    let title: String
-    let suffix: String
+/// AppKit status item hosting the marquee label and the SwiftUI popover.
+/// Pure AppKit because MenuBarExtra's label snapshots custom views once
+/// (freezing both the Core Animation marquee and the item's width).
+@MainActor
+final class StatusItemController: NSObject {
+    private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "ui")
 
-    func makeNSView(context: Context) -> StatusMarqueeView {
-        let view = StatusMarqueeView()
-        view.update(title: title, suffix: decoratedSuffix)
-        return view
+    private let appState: AppState
+    private let statusItem: NSStatusItem
+    private let marqueeView = StatusMarqueeView()
+    private var outsideClickMonitor: Any?
+
+    // NSPopover.show silently no-ops in this configuration (macOS 26,
+    // LSUIElement, SwiftUI lifecycle), so the panel is hand-rolled: a
+    // borderless key-capable panel positioned under the status item.
+    private lazy var panel: NSPanel = {
+        let host = NSHostingController(
+            rootView: MenuBarRootView()
+                .environment(appState)
+                .background(Color(nsColor: .windowBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 12)))
+        let panel = KeyablePanel(contentViewController: host)
+        panel.styleMask = [.borderless, .nonactivatingPanel]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.level = .popUpMenu
+        panel.isMovable = false
+        panel.hidesOnDeactivate = false
+        return panel
+    }()
+
+    init(appState: AppState) {
+        self.appState = appState
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        super.init()
+
+        if let button = statusItem.button {
+            button.target = self
+            button.action = #selector(togglePopover(_:))
+            button.addSubview(marqueeView)
+            marqueeView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                marqueeView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 6),
+                marqueeView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                marqueeView.heightAnchor.constraint(equalTo: button.heightAnchor),
+                marqueeView.widthAnchor.constraint(equalToConstant: 18),
+            ])
+        }
+        observeState()
+        refresh()
+        Self.logger.error("status item init done, button=\(self.statusItem.button != nil)")
     }
 
-    func updateNSView(_ nsView: StatusMarqueeView, context: Context) {
-        nsView.update(title: title, suffix: decoratedSuffix)
+    @objc private func togglePopover(_ sender: Any?) {
+        panel.isVisible ? closePanel() : openPanel()
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView: StatusMarqueeView, context: Context) -> CGSize? {
-        CGSize(width: nsView.desiredWidth, height: 22)
+    private func openPanel() {
+        guard let button = statusItem.button, let buttonWindow = button.window else { return }
+        panel.layoutIfNeeded()
+        let buttonRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        let size = panel.frame.size
+        let screen = buttonWindow.screen ?? NSScreen.main
+        var x = buttonRect.midX - size.width / 2
+        if let visible = screen?.visibleFrame {
+            x = min(max(x, visible.minX + 8), visible.maxX - size.width - 8)
+        }
+        panel.setFrameOrigin(NSPoint(x: x, y: buttonRect.minY - size.height - 6))
+        panel.makeKeyAndOrderFront(nil)
+        // Transient behavior by hand: any click outside our app closes it.
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.closePanel() }
+        }
     }
 
-    private var decoratedSuffix: String {
-        if !title.isEmpty, !suffix.isEmpty { return "· " + suffix }
-        return suffix
+    private func closePanel() {
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            outsideClickMonitor = nil
+        }
+        panel.orderOut(nil)
     }
+
+    /// Re-arms Observation tracking each time it fires — the AppKit
+    /// equivalent of a SwiftUI view depending on these properties.
+    private func observeState() {
+        withObservationTracking {
+            _ = appState.nowPlayingTitle
+            _ = appState.menuBarSuffix
+            _ = appState.status
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.refresh()
+                self.observeState()
+            }
+        }
+    }
+
+    private var widthConstraint: NSLayoutConstraint? {
+        marqueeView.constraints.first { $0.firstAttribute == .width }
+    }
+
+    private func refresh() {
+        let running = appState.status == .running
+        let title = running ? (appState.nowPlayingTitle ?? "") : ""
+        var suffix = running ? appState.menuBarSuffix : ""
+        if !title.isEmpty, !suffix.isEmpty {
+            suffix = "· " + suffix
+        }
+        marqueeView.update(title: title, suffix: suffix)
+        widthConstraint?.constant = marqueeView.desiredWidth
+        statusItem.length = marqueeView.desiredWidth + 12
+    }
+}
+
+/// Borderless windows refuse key status by default; the EQ panel needs it
+/// for the preset-name text field.
+private final class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
 }
 
 /// Icon + scrolling title + static suffix.
@@ -67,12 +167,22 @@ final class StatusMarqueeView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     var desiredWidth: CGFloat {
-        var width = Self.iconWidth
-        if !currentTitle.isEmpty {
-            width += Self.gap + min(titleWidth, Self.titleMaxWidth)
+        Self.measureWidth(title: currentTitle, suffix: currentSuffix)
+    }
+
+    /// Pure width computation so SwiftUI can size the label without asking
+    /// the view instance.
+    static func measureWidth(title: String, suffix: String) -> CGFloat {
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        func textWidth(_ text: String) -> CGFloat {
+            ceil(NSAttributedString(string: text, attributes: [.font: font]).size().width)
         }
-        if !currentSuffix.isEmpty {
-            width += Self.gap + ceil(suffixLabel.frame.width)
+        var width = iconWidth
+        if !title.isEmpty {
+            width += gap + min(textWidth(title), titleMaxWidth)
+        }
+        if !suffix.isEmpty {
+            width += gap + textWidth(suffix)
         }
         return width
     }
