@@ -131,17 +131,23 @@ private final class KeyablePanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
-/// Icon + scrolling title + static suffix.
+/// Icon + scrolling title + static suffix. The scrolling text is a
+/// CATextLayer whose bounds we set from the measured string width — plain
+/// layer geometry, immune to the NSTextField/Auto Layout interactions that
+/// kept truncating the doubled marquee string to the visible window.
 final class StatusMarqueeView: NSView {
     private let iconView = NSImageView()
     private let titleClipView = NSView()
-    private let titleLabel = NSTextField(labelWithString: "")
+    private let titleLayer = CATextLayer()
     private let suffixLabel = NSTextField(labelWithString: "")
     private var titleWidth: CGFloat = 0
     private var loopWidth: CGFloat = 0
-    private var labelFullSize: NSSize = .zero
+    private var titleDisplayString = ""
     private var currentTitle = ""
     private var currentSuffix = ""
+
+    private static let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    private static let lineHeight: CGFloat = 17
 
     private static let loopGap = "        "
     private static let titleMaxWidth: CGFloat = 110
@@ -158,24 +164,41 @@ final class StatusMarqueeView: NSView {
         // Follow the menu bar's effective appearance (template symbols in a
         // plain NSImageView don't auto-tint like a status button image).
         iconView.contentTintColor = .labelColor
-        titleLabel.textColor = .labelColor
         suffixLabel.textColor = .labelColor
+        suffixLabel.font = Self.font
         titleClipView.wantsLayer = true
         titleClipView.layer?.masksToBounds = true
-        titleLabel.wantsLayer = true
-        titleLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
-        titleLabel.lineBreakMode = .byClipping
-        suffixLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
-        // Frames are managed manually in layout(); autoresizing would drag
-        // the label's width along with the clip view, truncating the doubled
-        // marquee string to the window width.
+        titleLayer.anchorPoint = .zero
+        titleLayer.truncationMode = .none
+        titleLayer.isWrapped = false
+        titleClipView.layer?.addSublayer(titleLayer)
         titleClipView.autoresizingMask = []
-        titleLabel.autoresizingMask = []
         suffixLabel.autoresizingMask = []
         addSubview(iconView)
-        titleClipView.addSubview(titleLabel)
         addSubview(titleClipView)
         addSubview(suffixLabel)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        titleLayer.contentsScale = window?.backingScaleFactor ?? 2
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        rebuildTitleLayerString()
+    }
+
+    /// CATextLayer doesn't resolve dynamic system colors, so bake the
+    /// current appearance's labelColor into the attributed string.
+    private func rebuildTitleLayerString() {
+        var resolvedColor = NSColor.labelColor
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            resolvedColor = NSColor(cgColor: NSColor.labelColor.cgColor) ?? .labelColor
+        }
+        titleLayer.string = NSAttributedString(
+            string: titleDisplayString,
+            attributes: [.font: Self.font, .foregroundColor: resolvedColor])
     }
 
     @available(*, unavailable)
@@ -186,25 +209,21 @@ final class StatusMarqueeView: NSView {
     // synthetic click tests passed while physical clicks did nothing).
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
+    /// Title slot is a fixed width so the status item doesn't resize (and
+    /// shuffle the whole menu bar) on every track change.
     var desiredWidth: CGFloat {
-        Self.measureWidth(title: currentTitle, suffix: currentSuffix)
-    }
-
-    /// Pure width computation so SwiftUI can size the label without asking
-    /// the view instance.
-    static func measureWidth(title: String, suffix: String) -> CGFloat {
-        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-        func textWidth(_ text: String) -> CGFloat {
-            ceil(NSAttributedString(string: text, attributes: [.font: font]).size().width)
+        var width = Self.iconWidth
+        if !currentTitle.isEmpty {
+            width += Self.gap + Self.titleMaxWidth
         }
-        var width = iconWidth
-        if !title.isEmpty {
-            width += gap + min(textWidth(title), titleMaxWidth)
-        }
-        if !suffix.isEmpty {
-            width += gap + textWidth(suffix)
+        if !currentSuffix.isEmpty {
+            width += Self.gap + ceil(suffixLabel.frame.width)
         }
         return width
+    }
+
+    private func measure(_ text: String) -> CGFloat {
+        ceil(NSAttributedString(string: text, attributes: [.font: Self.font]).size().width)
     }
 
     func update(title: String, suffix: String) {
@@ -212,24 +231,21 @@ final class StatusMarqueeView: NSView {
         currentTitle = title
         currentSuffix = suffix
 
-        titleLabel.stringValue = title
-        titleLabel.sizeToFit()
-        titleWidth = ceil(titleLabel.frame.width)
+        titleWidth = measure(title)
         if titleWidth > Self.titleMaxWidth {
             // Two copies separated by a gap: when the animation wraps at
             // -loopWidth the second copy sits exactly where the first
             // started, so the loop continues forward instead of snapping.
-            let head = title + Self.loopGap
-            loopWidth = ceil(NSAttributedString(
-                string: head,
-                attributes: [.font: titleLabel.font ?? .systemFont(ofSize: NSFont.systemFontSize)]
-            ).size().width)
-            titleLabel.stringValue = head + title
-            titleLabel.sizeToFit()
+            loopWidth = measure(title + Self.loopGap)
+            titleDisplayString = title + Self.loopGap + title
         } else {
             loopWidth = 0
+            titleDisplayString = title
         }
-        labelFullSize = titleLabel.frame.size
+        rebuildTitleLayerString()
+        titleLayer.frame = CGRect(x: 0, y: 0,
+                                  width: loopWidth > 0 ? loopWidth + titleWidth : titleWidth,
+                                  height: Self.lineHeight)
 
         suffixLabel.stringValue = suffix
         suffixLabel.sizeToFit()
@@ -247,13 +263,9 @@ final class StatusMarqueeView: NSView {
         var x = Self.iconWidth
         if !currentTitle.isEmpty {
             x += Self.gap
-            let clipWidth = min(titleWidth, Self.titleMaxWidth)
-            titleClipView.frame = NSRect(x: x, y: (height - labelFullSize.height) / 2,
-                                         width: clipWidth, height: labelFullSize.height)
-            // Always the full measured size — never re-read the live frame,
-            // which the clip view's resize may have squeezed.
-            titleLabel.frame = NSRect(origin: .zero, size: labelFullSize)
-            x += clipWidth
+            titleClipView.frame = NSRect(x: x, y: (height - Self.lineHeight) / 2,
+                                         width: Self.titleMaxWidth, height: Self.lineHeight)
+            x += Self.titleMaxWidth
         }
         if !currentSuffix.isEmpty {
             x += Self.gap
@@ -268,7 +280,7 @@ final class StatusMarqueeView: NSView {
     /// copy's head aligns → wrap on identical pixels → hold again. The title
     /// never scrolls backwards.
     private func restartAnimation() {
-        titleLabel.layer?.removeAnimation(forKey: "marquee")
+        titleLayer.removeAnimation(forKey: "marquee")
         guard loopWidth > 0 else { return }
         let tailOffset = titleWidth - Self.titleMaxWidth
         let tailScroll = Double(tailOffset / Self.speed)
@@ -286,6 +298,6 @@ final class StatusMarqueeView: NSView {
         animation.duration = total
         animation.repeatCount = .infinity
         animation.isRemovedOnCompletion = false
-        titleLabel.layer?.add(animation, forKey: "marquee")
+        titleLayer.add(animation, forKey: "marquee")
     }
 }
