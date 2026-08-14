@@ -13,7 +13,7 @@ struct NeiroApp: App {
         } label: {
             Image(systemName: "slider.horizontal.3")
             if appState.status == .running {
-                Text(appState.formatLabel)
+                Text(appState.menuBarLabel)
             }
         }
         .menuBarExtraStyle(.window)

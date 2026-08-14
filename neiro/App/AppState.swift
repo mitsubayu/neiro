@@ -36,6 +36,18 @@ final class AppState {
     private(set) var nowPlayingArtist: String?
     private(set) var nowPlayingArtwork: NSImage?
 
+    /// Menu bar text: "曲名 · ALAC 96kHz/24bit" (title truncated, parts
+    /// omitted while unknown).
+    var menuBarLabel: String {
+        var parts: [String] = []
+        if let title = nowPlayingTitle, !title.isEmpty {
+            parts.append(title.count > 16 ? title.prefix(16) + "…" : title)
+        }
+        let codec = trackCodec.map { "\($0) " } ?? ""
+        parts.append(codec + formatLabel)
+        return parts.joined(separator: " · ")
+    }
+
     /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
     /// the menu bar next to the icon and in the status row.
     var formatLabel: String {
