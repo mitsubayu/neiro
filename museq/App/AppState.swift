@@ -27,6 +27,15 @@ final class AppState {
     private(set) var status: EngineStatus = .disabled
     private(set) var engineSampleRate: Double = 44_100
 
+    /// "44.1k" / "48k" / "96k" — shown in the menu bar next to the icon.
+    var sampleRateLabel: String {
+        let kilohertz = engineSampleRate / 1000
+        let text = kilohertz == kilohertz.rounded()
+            ? String(format: "%.0f", kilohertz)
+            : String(format: "%.1f", kilohertz)
+        return "\(text)k"
+    }
+
     let deviceMonitor = OutputDeviceMonitor()
 
     @ObservationIgnored private let processor = EQProcessor()
@@ -34,6 +43,7 @@ final class AppState {
     @ObservationIgnored private var workspaceObservers: [NSObjectProtocol] = []
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var musicWaitTask: Task<Void, Never>?
+    @ObservationIgnored private var activeOutputUID: String?
 
     init() {
         let loaded = SettingsStore.load()
@@ -99,6 +109,7 @@ final class AppState {
             return
         }
 
+        activeOutputUID = outputUID
         let engine = self.engine
         engine.controlQueue.async { [weak self] in
             do {
@@ -111,6 +122,7 @@ final class AppState {
             } catch {
                 Task { @MainActor [weak self] in
                     self?.status = .error(error.localizedDescription)
+                    self?.activeOutputUID = nil
                 }
             }
         }
@@ -118,6 +130,7 @@ final class AppState {
 
     private func stopEngine() {
         musicWaitTask?.cancel()
+        activeOutputUID = nil
         let engine = self.engine
         engine.controlQueue.async { engine.stop() }
         status = .disabled
@@ -174,9 +187,12 @@ final class AppState {
 
     private func handleDeviceListChange() {
         guard settings.isEnabled, status == .running else { return }
-        // Selected device unplugged → resolveOutputUID falls back to the
-        // system default; a default-output change with "follow default"
-        // selected also lands here and re-targets the aggregate.
+        // Restart only when the resolved target actually differs from the
+        // device the engine is using. Creating/destroying our own aggregate
+        // fires this listener too — restarting unconditionally here put the
+        // engine in a teardown/rebuild loop (audible as periodic dropouts).
+        let desired = resolveOutputUID()
+        guard desired != activeOutputUID else { return }
         startEngine()
     }
 }

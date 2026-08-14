@@ -1,5 +1,7 @@
 import CoreAudio
 import Foundation
+import Synchronization
+import os
 
 /// Owns the process tap → aggregate device → IOProc chain.
 ///
@@ -9,7 +11,21 @@ import Foundation
 final class ProcessTapEngine {
     let controlQueue = DispatchQueue(label: "museq.engine.control")
 
+    /// Incremented from the realtime thread, read from a control-queue timer.
+    final class Diagnostics {
+        let callbacks = Atomic<UInt64>(0)
+        let zeroInputCallbacks = Atomic<UInt64>(0)
+        let frameMismatchCallbacks = Atomic<UInt64>(0)
+        let lastInputFrames = Atomic<Int>(0)
+        let lastOutputFrames = Atomic<Int>(0)
+    }
+
+    private static let logger = Logger(subsystem: "com.mitsuba.museq", category: "engine")
+
     private let processor: EQProcessor
+    private let diagnostics = Diagnostics()
+    private var diagnosticsTimer: DispatchSourceTimer?
+    private var overloadListener: PropertyListener?
     private var tapID: AudioObjectID = .unknown
     private var aggregateID: AudioObjectID = .unknown
     private var ioProcID: AudioDeviceIOProcID?
@@ -43,9 +59,15 @@ final class ProcessTapEngine {
         }
         tapID = newTapID
 
+        var tapFormat = AudioStreamBasicDescription()
+        try? tapID.read(kAudioTapPropertyFormat, into: &tapFormat)
+        Self.logger.info("tap format: rate=\(tapFormat.mSampleRate) channels=\(tapFormat.mChannelsPerFrame) flags=\(tapFormat.mFormatFlags)")
+
+        matchOutputDeviceRate(outputDeviceUID: outputDeviceUID, to: tapFormat.mSampleRate)
+
         let aggregateDescription: [String: Any] = [
             kAudioAggregateDeviceNameKey: "museq-aggregate",
-            kAudioAggregateDeviceUIDKey: "com.mitsuba.museq.aggregate",
+            kAudioAggregateDeviceUIDKey: museqAggregateUID,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceIsStackedKey: false,
             kAudioAggregateDeviceMainSubDeviceKey: outputDeviceUID,
@@ -87,9 +109,11 @@ final class ProcessTapEngine {
         // HAL's realtime I/O thread — required for deterministic playthrough.
         let processor = self.processor
         var newIOProcID: AudioDeviceIOProcID?
+        let diagnostics = self.diagnostics
         status = AudioDeviceCreateIOProcIDWithBlock(&newIOProcID, aggregateID, nil) {
             _, inInputData, _, outOutputData, _ in
-            ProcessTapEngine.render(input: inInputData, output: outOutputData, processor: processor)
+            ProcessTapEngine.render(input: inInputData, output: outOutputData,
+                                    processor: processor, diagnostics: diagnostics)
         }
         guard status == noErr, let procID = newIOProcID else {
             stopLocked()
@@ -102,6 +126,68 @@ final class ProcessTapEngine {
             stopLocked()
             throw CoreAudioError(status: status, operation: "Start aggregate device")
         }
+
+        Self.logger.info("engine started: aggregate rate=\(self.sampleRate) output=\(outputDeviceUID)")
+        startDiagnostics()
+    }
+
+    /// Sets the output device's nominal rate to the tap's rate when supported,
+    /// so the HAL's tap resampler runs 1:1 instead of e.g. 48k→44.1k.
+    private func matchOutputDeviceRate(outputDeviceUID: String, to tapRate: Double) {
+        guard tapRate > 0 else { return }
+        let deviceIDs: [AudioObjectID] = (try? AudioObjectID.system.readArray(kAudioHardwarePropertyDevices)) ?? []
+        guard let deviceID = deviceIDs.first(where: { (try? $0.readString(kAudioDevicePropertyDeviceUID)) == outputDeviceUID })
+        else { return }
+
+        let currentRate = (try? deviceID.readDouble(kAudioDevicePropertyNominalSampleRate)) ?? 0
+        guard currentRate != tapRate else { return }
+
+        let supported: [AudioValueRange] = (try? deviceID.readArray(kAudioDevicePropertyAvailableNominalSampleRates)) ?? []
+        guard supported.contains(where: { $0.mMinimum <= tapRate && tapRate <= $0.mMaximum }) else {
+            Self.logger.warning("output device does not support tap rate \(tapRate); keeping \(currentRate)")
+            return
+        }
+
+        var newRate = tapRate
+        var address = AudioObjectPropertyAddress(kAudioDevicePropertyNominalSampleRate)
+        let status = AudioObjectSetPropertyData(deviceID, &address, 0, nil,
+                                                UInt32(MemoryLayout<Double>.size), &newRate)
+        guard status == noErr else {
+            Self.logger.warning("failed to set output rate to \(tapRate): \(status)")
+            return
+        }
+        // The switch is asynchronous on USB devices; wait until it lands so
+        // the aggregate is created against the new rate.
+        for _ in 0..<20 {
+            if (try? deviceID.readDouble(kAudioDevicePropertyNominalSampleRate)) == tapRate { break }
+            usleep(100_000)
+        }
+        Self.logger.info("output device rate matched to \(tapRate)")
+    }
+
+    private func startDiagnostics() {
+        overloadListener = PropertyListener(objectID: aggregateID,
+                                            selector: kAudioDeviceProcessorOverload,
+                                            queue: controlQueue) {
+            Self.logger.error("processor overload on aggregate device")
+        }
+
+        var previousCallbacks: UInt64 = 0
+        let timer = DispatchSource.makeTimerSource(queue: controlQueue)
+        timer.schedule(deadline: .now() + 5, repeating: 5)
+        timer.setEventHandler { [diagnostics] in
+            let callbacks = diagnostics.callbacks.load(ordering: .relaxed)
+            Self.logger.info("""
+                diag: callbacks=\(callbacks) (+\(callbacks - previousCallbacks)/5s) \
+                zeroInput=\(diagnostics.zeroInputCallbacks.load(ordering: .relaxed)) \
+                frameMismatch=\(diagnostics.frameMismatchCallbacks.load(ordering: .relaxed)) \
+                lastFrames in=\(diagnostics.lastInputFrames.load(ordering: .relaxed)) \
+                out=\(diagnostics.lastOutputFrames.load(ordering: .relaxed))
+                """)
+            previousCallbacks = callbacks
+        }
+        timer.resume()
+        diagnosticsTimer = timer
     }
 
     func stop() {
@@ -111,6 +197,9 @@ final class ProcessTapEngine {
 
     /// Idempotent teardown in strict reverse order of construction.
     private func stopLocked() {
+        diagnosticsTimer?.cancel()
+        diagnosticsTimer = nil
+        overloadListener = nil
         sampleRateListener = nil
         if let procID = ioProcID, aggregateID.isValid {
             AudioDeviceStop(aggregateID, procID)
@@ -131,12 +220,15 @@ final class ProcessTapEngine {
     /// to the output buffers. No allocation, locks, or ObjC dispatch here.
     private static func render(input: UnsafePointer<AudioBufferList>,
                                output: UnsafeMutablePointer<AudioBufferList>,
-                               processor: EQProcessor) {
+                               processor: EQProcessor,
+                               diagnostics: Diagnostics) {
+        diagnostics.callbacks.wrappingAdd(1, ordering: .relaxed)
         let outputList = UnsafeMutableAudioBufferListPointer(output)
 
         let inputList = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard let inputBuffer = inputList.first(where: { $0.mData != nil && $0.mDataByteSize > 0 }),
               let inputData = inputBuffer.mData?.assumingMemoryBound(to: Float32.self) else {
+            diagnostics.zeroInputCallbacks.wrappingAdd(1, ordering: .relaxed)
             for buffer in outputList {
                 if let data = buffer.mData { memset(data, 0, Int(buffer.mDataByteSize)) }
             }
@@ -145,12 +237,17 @@ final class ProcessTapEngine {
 
         let inputChannels = max(Int(inputBuffer.mNumberChannels), 1)
         let frames = Int(inputBuffer.mDataByteSize) / (MemoryLayout<Float32>.size * inputChannels)
+        diagnostics.lastInputFrames.store(frames, ordering: .relaxed)
         processor.process(inputData, frames: frames, channels: inputChannels)
 
         for buffer in outputList {
             guard let outData = buffer.mData?.assumingMemoryBound(to: Float32.self) else { continue }
             let outChannels = max(Int(buffer.mNumberChannels), 1)
             let outFrames = Int(buffer.mDataByteSize) / (MemoryLayout<Float32>.size * outChannels)
+            diagnostics.lastOutputFrames.store(outFrames, ordering: .relaxed)
+            if outFrames != frames {
+                diagnostics.frameMismatchCallbacks.wrappingAdd(1, ordering: .relaxed)
+            }
             memset(outData, 0, Int(buffer.mDataByteSize))
             let copyFrames = min(frames, outFrames)
             let copyChannels = min(inputChannels, outChannels)

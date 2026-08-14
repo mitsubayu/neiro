@@ -12,7 +12,7 @@ struct MenuBarRootView: View {
                 }
                 .toggleStyle(.switch)
                 Spacer()
-                Text(appState.status.label)
+                Text(statusText)
                     .font(.caption)
                     .foregroundStyle(statusColor)
             }
@@ -68,6 +68,13 @@ struct MenuBarRootView: View {
         }
         .padding(14)
         .frame(width: 380)
+    }
+
+    private var statusText: String {
+        if case .running = appState.status {
+            return "Running · \(appState.sampleRateLabel)Hz"
+        }
+        return appState.status.label
     }
 
     private var statusColor: Color {

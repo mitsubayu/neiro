@@ -6,10 +6,15 @@ struct MuseqApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("museq", systemImage: "slider.horizontal.3") {
+        MenuBarExtra {
             MenuBarRootView()
                 .environment(appState)
                 .onAppear { appDelegate.appState = appState }
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+            if appState.status == .running {
+                Text(appState.sampleRateLabel)
+            }
         }
         .menuBarExtraStyle(.window)
     }

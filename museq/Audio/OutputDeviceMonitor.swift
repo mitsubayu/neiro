@@ -49,12 +49,16 @@ final class OutputDeviceMonitor {
     private func refresh() {
         let ids: [AudioObjectID] = (try? AudioObjectID.system.readArray(kAudioHardwarePropertyDevices)) ?? []
         devices = ids.compactMap { id in
-            // Only devices with output streams; taps/aggregates we create are
-            // private and never show up here.
             let streams: [AudioObjectID] = (try? id.readArray(kAudioDevicePropertyStreams,
                                                               scope: kAudioObjectPropertyScopeOutput)) ?? []
             guard !streams.isEmpty else { return nil }
-            return Self.describe(id)
+            guard let device = Self.describe(id),
+                  // Our own aggregate is private but still visible to the
+                  // process that owns it — listing it would let the user route
+                  // museq into itself, and its create/destroy churn must not
+                  // look like a real device change.
+                  device.uid != museqAggregateUID else { return nil }
+            return device
         }
     }
 }
