@@ -16,6 +16,7 @@
 		316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0769917D43131ABBEAC7ABAA /* SettingsStore.swift */; };
 		34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E160B23077B14806E1E35A1 /* EQProcessor.swift */; };
 		4A746BCBFACD33B4C1AC5639 /* BiquadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0EF54BC11A2943DF924034 /* BiquadTests.swift */; };
+		4A8A3EF9269ED99CFC537530 /* IconGlyph.svg in Resources */ = {isa = PBXBuildFile; fileRef = 35C73759FE93D83C90FC3131 /* IconGlyph.svg */; };
 		72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */; };
 		8187D61F53EC56CE18AE842C /* MusicRemote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020D94E22C12B79F11A64774 /* MusicRemote.swift */; };
 		99BEBFBE3B6BAAEF309F15CB /* OutputDeviceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */; };
@@ -47,6 +48,7 @@
 		14B019F35C3F44EF7E71F95A /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1C0EF54BC11A2943DF924034 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
 		34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRateDetector.swift; sourceTree = "<group>"; };
+		35C73759FE93D83C90FC3131 /* IconGlyph.svg */ = {isa = PBXFileReference; path = IconGlyph.svg; sourceTree = "<group>"; };
 		42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
 		4A0F8686A7A6A602312FADE9 /* neiro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = neiro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50EDEA29D6145FC019262B11 /* NeiroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeiroApp.swift; sourceTree = "<group>"; };
@@ -89,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				14B019F35C3F44EF7E71F95A /* AppIcon.icns */,
+				35C73759FE93D83C90FC3131 /* IconGlyph.svg */,
 				C6F4A2437E9844E56B60F534 /* Info.plist */,
 				3B920BA090D1AC6FECAAA018 /* App */,
 				82199C074E7B98999F658275 /* Audio */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B68DD9D8AA8F612968971393 /* AppIcon.icns in Resources */,
+				4A8A3EF9269ED99CFC537530 /* IconGlyph.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
