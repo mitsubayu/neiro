@@ -2,9 +2,8 @@
 
 Apple Music (Music.app) の音声をフルレート(ビット・パーフェクト志向)で再生しつつ、
 パラメトリック EQ をかける macOS メニューバー常駐アプリ。
-市販アプリ MusEQ に着想を得た自作実装。
 
-- リポジトリ: `~/repos/museq`(ディレクトリ名は旧名のまま。アプリ名・バンドル ID は neiro)
+- リポジトリ: `~/repos/neiro`(ディレクトリ名は旧名のまま。アプリ名・バンドル ID は neiro)
 - バンドル ID: `com.mitsuba.neiro` / ログ subsystem: `com.mitsuba.neiro`
 - 対象 OS: macOS 15.0+(Core Audio Process Tap API のため実質 14.2+ が下限。開発機は macOS 26)
 
