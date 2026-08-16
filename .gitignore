@@ -6,3 +6,6 @@ DerivedData/
 
 # Generated from project.yml by XcodeGen — run scripts/bootstrap.sh
 neiro.xcodeproj/
+
+# Personal listening data used for rate testing — see docs/debugging-rates.md
+docs/rate-map.local.md

@@ -3,7 +3,6 @@
 Apple Music (Music.app) の音声をフルレート(ビット・パーフェクト志向)で再生しつつ、
 パラメトリック EQ をかける macOS メニューバー常駐アプリ。
 
-- リポジトリ: `~/repos/neiro` / リモート: https://dev.azure.com/c-mitsuba/neiro
 - バンドル ID: `com.mitsuba.neiro` / ログ subsystem: `com.mitsuba.neiro`
 - 対象 OS: macOS 15.0+(Core Audio Process Tap API のため実質 14.2+ が下限。開発機は macOS 26)
 
@@ -282,7 +281,8 @@ xcodebuild -project neiro.xcodeproj -scheme neiro -configuration Debug -derivedD
 ```
 
 - **日常利用は必ず Release**。Debug は最適化なしの DSP がリアルタイムスレッドで CPU ~37% 食う
-- 署名: Apple Development(Personal Team 7N7LUCUW5K)自動署名 — TCC 許可がリビルド後も持続
+- 署名: Apple Development 証明書での自動署名(team id は `scripts/bootstrap.sh` が環境から解決)。
+  署名しておくと TCC 許可がリビルド後も持続する
 - App Sandbox は無効必須(Process Tap に公開 entitlement がない)。Hardened Runtime も無効
 - 必要な TCC(初回にダイアログ): システムオーディオ録音(`NSAudioCaptureUsageDescription`)、
   Music の制御(`NSAppleEventsUsageDescription`)
