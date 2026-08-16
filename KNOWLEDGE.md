@@ -89,6 +89,16 @@ AAC は float 出力 → ビット深度の概念なし
 - **対策**: 監視開始時に `log show --last Ns` で**一度だけ過去を読む**(同じパーサを再利用)。
   「購読(未来)+ スナップショット(現在)」はイベント駆動設計の定石
 
+### 2.6.1 コーデック名は「AudioQueue 作成行」だけに頼らない
+- **症状**: メニューバーにコーデック(ALAC/AAC)が出ないことが多い
+- **真因**: `Creating AudioQueue with format:'qlac'` は**キューを作り直すときしか出ない**。
+  同一フォーマットが続く曲変更ではキューが再利用され、この行が出ない
+- **対策**: デコーダの `Output format:` 行は毎回出る。**行に含まれるデコーダのクラス名**
+  (`ACAppleLosslessDecoder` → ALAC、`ACMP4AACBaseDecoder` → AAC)から判定する。
+  ただし `ACCPEDecoderWrapper` のような総称ラッパは形式を名乗らないので推測しない
+- **一般化**: ログを情報源にするときは「毎回出る行」と「たまにしか出ない行」を見分け、
+  前者から取れる情報を優先する
+
 ### 2.7 その他
 - 曲名/アーティストは `com.apple.Music.playerInfo` 分散通知が最軽量
 - アートワークは AppleScript で `raw data of artwork 1 of current track` をファイルに書かせる

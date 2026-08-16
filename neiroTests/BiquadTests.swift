@@ -352,6 +352,20 @@ struct BiquadTests {
         #expect(TrackRateDetector.parseCodec(fromEventMessage: "no format here") == nil)
     }
 
+    @Test func decoderCodecParsing() {
+        let alac = "ACAppleLosslessDecoder.cpp:683   (0xaedce8f00) Output format:  2 ch,  96000 Hz, lpcm (0x0000000C) 24-bit little-endian signed integer"
+        #expect(TrackRateDetector.parseDecoderCodec(fromEventMessage: alac) == "ALAC")
+
+        let aac = "ACMP4AACBaseDecoder.cpp:313   (0xa8129ce00) Output format:  2 ch,  48000 Hz, Float32, deinterleaved"
+        #expect(TrackRateDetector.parseDecoderCodec(fromEventMessage: aac) == "AAC")
+
+        // The generic wrapper names no format — better nothing than a guess.
+        let wrapper = "ACCPEDecoderWrapper.cpp:322   (0xa866b8ba0) Output format:  2 ch,  48000 Hz, Int16, interleaved"
+        #expect(TrackRateDetector.parseDecoderCodec(fromEventMessage: wrapper) == nil)
+
+        #expect(TrackRateDetector.parseDecoderCodec(fromEventMessage: "Creating AudioQueue with format:'qlac'") == nil)
+    }
+
     @Test func builtInPresetsAreWellFormed() {
         #expect(!BuiltInPresets.all.isEmpty)
         for preset in BuiltInPresets.all {

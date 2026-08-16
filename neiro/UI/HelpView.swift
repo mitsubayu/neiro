@@ -37,6 +37,35 @@ struct HelpView: View {
     ]
 
     var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            topicList
+        }
+        // Resizable: the window is a reading surface, and the reader decides
+        // how much of the screen it gets.
+        .frame(minWidth: 360, idealWidth: 460, maxWidth: .infinity,
+               minHeight: 320, idealHeight: 560, maxHeight: .infinity)
+    }
+
+    private var header: some View {
+        VStack(spacing: 6) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 72, height: 72)
+            Text("neiro").font(.title3.weight(.semibold))
+            if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                Text("Version \(version)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+    }
+
+    private var topicList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 ForEach(topics) { topic in
@@ -57,6 +86,5 @@ struct HelpView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 460, height: 560)
     }
 }

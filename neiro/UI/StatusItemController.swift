@@ -122,8 +122,10 @@ final class StatusItemController: NSObject {
         if helpWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
             window.title = String(localized: "neiro Help", table: "Help")
-            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.isReleasedWhenClosed = false
+            window.setContentSize(NSSize(width: 460, height: 560))
+            window.contentMinSize = NSSize(width: 360, height: 320)
             window.center()
             helpWindow = window
         }

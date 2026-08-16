@@ -59,6 +59,7 @@ final class TrackRateDetector {
         var latestRate: Double?
         var latestCodec: String?
         var latestFormat: (sampleRate: Double, bitDepth: Int?)?
+        var latestDecoderCodec: String?
         for line in data.split(separator: UInt8(ascii: "\n")) {
             guard let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   let message = json["eventMessage"] as? String else { continue }
@@ -67,12 +68,13 @@ final class TrackRateDetector {
                 latestCodec = Self.parseCodec(fromEventMessage: message) ?? latestCodec
             } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
                 latestFormat = format
+                latestDecoderCodec = Self.parseDecoderCodec(fromEventMessage: message) ?? latestDecoderCodec
             }
         }
         guard latestRate != nil || latestFormat != nil else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if let codec = latestCodec { self.onCodecDetected?(codec) }
+            if let codec = latestCodec ?? latestDecoderCodec { self.onCodecDetected?(codec) }
             if let format = latestFormat { self.onBitDepthDetected?(format.sampleRate, format.bitDepth) }
             if let rate = latestRate { self.onRateDetected?(rate) }
         }
@@ -149,7 +151,9 @@ final class TrackRateDetector {
                     self?.onRateDetected?(rate)
                 }
             } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
+                let codec = Self.parseDecoderCodec(fromEventMessage: message)
                 DispatchQueue.main.async { [weak self] in
+                    if let codec { self?.onCodecDetected?(codec) }
                     self?.onBitDepthDetected?(format.sampleRate, format.bitDepth)
                 }
             }
@@ -187,6 +191,21 @@ final class TrackRateDetector {
               open < close else { return nil }
         let codec = match[match.index(after: open)..<close].trimmingCharacters(in: .whitespaces)
         return codec.isEmpty ? nil : codec
+    }
+
+    /// Music only logs "Creating AudioQueue with format:'…'" when it builds a
+    /// new queue, which it skips for many track changes — so the codec was
+    /// usually missing from the display. The decoder that logs the output
+    /// format names itself, and that line comes with every track.
+    static func parseDecoderCodec(fromEventMessage message: String) -> String? {
+        guard message.contains("Output format:") else { return nil }
+        if message.contains("AppleLossless") { return "ALAC" }
+        if message.contains("AAC") { return "AAC" }
+        if message.contains("FLAC") { return "FLAC" }
+        if message.contains("MP3") || message.contains("Mpeg") { return "MP3" }
+        // ACCPEDecoderWrapper and friends don't name a format; ignore them
+        // rather than guess.
+        return nil
     }
 
     /// Human-readable codec name for the display ("qlac" → "ALAC").
