@@ -19,6 +19,7 @@ final class StatusItemController: NSObject {
     // NSPopover.show silently no-ops in this configuration (macOS 26,
     // LSUIElement, SwiftUI lifecycle), so the panel is hand-rolled: a
     // borderless key-capable panel positioned under the status item.
+    private var panelIfCreated: NSPanel?
     private lazy var panel: NSPanel = {
         let host = NSHostingController(
             rootView: MenuBarRootView()
@@ -34,6 +35,7 @@ final class StatusItemController: NSObject {
         panel.isMovable = false
         panel.hidesOnDeactivate = false
         panel.appearance = nil  // inherit the system light/dark appearance
+        panelIfCreated = panel
         return panel
     }()
 
@@ -68,6 +70,23 @@ final class StatusItemController: NSObject {
         panel.isVisible ? closePanel() : openPanel()
     }
 
+    /// The dismiss-on-outside-click behaviour is what "pinned" turns off, so
+    /// it is installed and removed from one place that both opening and the
+    /// toggle can call.
+    private func syncDismissMonitor() {
+        let shouldDismiss = panelIfCreated?.isVisible == true && !appState.settings.panelPinned
+        if shouldDismiss, outsideClickMonitor == nil {
+            outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+                matching: [.leftMouseDown, .rightMouseDown]
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in self?.closePanel() }
+            }
+        } else if !shouldDismiss, let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            outsideClickMonitor = nil
+        }
+    }
+
     private func openPanel() {
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
         panel.layoutIfNeeded()
@@ -80,12 +99,7 @@ final class StatusItemController: NSObject {
         }
         panel.setFrameOrigin(NSPoint(x: x, y: buttonRect.minY - size.height - 6))
         panel.makeKeyAndOrderFront(nil)
-        // Transient behavior by hand: any click outside our app closes it.
-        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.closePanel() }
-        }
+        syncDismissMonitor()
     }
 
     private func closePanel() {
@@ -103,6 +117,7 @@ final class StatusItemController: NSObject {
             _ = appState.nowPlayingTitle
             _ = appState.menuBarSuffix
             _ = appState.status
+            _ = appState.settings.panelPinned
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -122,6 +137,7 @@ final class StatusItemController: NSObject {
         marqueeView.update(title: title, suffix: suffix)
         marqueeWidthConstraint?.constant = marqueeView.desiredWidth
         statusItem.length = marqueeView.desiredWidth + 12
+        syncDismissMonitor()
     }
 }
 

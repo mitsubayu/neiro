@@ -20,6 +20,17 @@ struct MenuBarRootView: View {
                 Text(statusText)
                     .font(.caption)
                     .foregroundStyle(statusColor)
+                Button {
+                    appState.settings.panelPinned.toggle()
+                } label: {
+                    Image(systemName: appState.settings.panelPinned ? "pin.fill" : "pin")
+                        .rotationEffect(.degrees(appState.settings.panelPinned ? 0 : 45))
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(appState.settings.panelPinned ? Color.accentColor : .secondary)
+                .help(appState.settings.panelPinned
+                      ? "Panel stays open until you close it"
+                      : "Keep the panel open when clicking elsewhere")
             }
 
             if let title = appState.nowPlayingTitle {

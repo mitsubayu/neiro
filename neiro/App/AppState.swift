@@ -636,23 +636,35 @@ final class AppState {
     private func refreshNowPlaying(havePayloadTitle: Bool) {
         nowPlayingTask?.cancel()
         nowPlayingTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled, let self else { return }
             let artworkPath = NSTemporaryDirectory() + "neiro-artwork"
-            let result = await Task.detached {
-                let info = MusicRemote.nowPlaying()
-                let hasArtwork = info != nil && MusicRemote.saveArtwork(to: artworkPath)
-                return (info, hasArtwork)
-            }.value
-            guard !Task.isCancelled else { return }
-            if let info = result.0 {
-                self.nowPlayingTitle = info.title
-                self.nowPlayingArtist = info.artist
-            } else if !havePayloadTitle {
-                self.nowPlayingTitle = nil
-                self.nowPlayingArtist = nil
+            // A streaming track's artwork is not there the instant the track
+            // starts — it arrives a few seconds later. One attempt left the
+            // panel showing the placeholder for the rest of the song, so keep
+            // asking for a while. A new track cancels this task.
+            for delay in [Duration.milliseconds(400), .seconds(1.5), .seconds(3), .seconds(6)] {
+                try? await Task.sleep(for: delay)
+                guard !Task.isCancelled, let self else { return }
+                let result = await Task.detached {
+                    let info = MusicRemote.nowPlaying()
+                    let hasArtwork = info != nil && MusicRemote.saveArtwork(to: artworkPath)
+                    return (info, hasArtwork)
+                }.value
+                guard !Task.isCancelled else { return }
+                if let info = result.0 {
+                    self.nowPlayingTitle = info.title
+                    self.nowPlayingArtist = info.artist
+                } else if !havePayloadTitle {
+                    self.nowPlayingTitle = nil
+                    self.nowPlayingArtist = nil
+                }
+                if result.1, let image = NSImage(contentsOfFile: artworkPath) {
+                    self.nowPlayingArtwork = image
+                    return
+                }
+                // Nothing playing at all — no point retrying.
+                if result.0 == nil { self.nowPlayingArtwork = nil; return }
+                self.nowPlayingArtwork = nil
             }
-            self.nowPlayingArtwork = result.1 ? NSImage(contentsOfFile: artworkPath) : nil
         }
     }
 
