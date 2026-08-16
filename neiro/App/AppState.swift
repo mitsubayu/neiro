@@ -15,10 +15,10 @@ final class AppState {
 
         var label: String {
             switch self {
-            case .disabled: String(localized: "Off")
-            case .waitingForMusic: String(localized: "Waiting for Music.app…")
-            case .running: String(localized: "Running")
-            case .error(let message): String(format: String(localized: "Error: %@"), message)
+            case .disabled: "Off"
+            case .waitingForMusic: "Waiting for Music.app…"
+            case .running: "Running"
+            case .error(let message): "Error: \(message)"
             }
         }
     }

@@ -9,9 +9,9 @@ enum AboutCredits {
 
     private static var blurb: String {
         [
-            String(localized: "Full-rate playback and parametric EQ for Apple Music."),
-            String(localized: "Captures Music.app with a Core Audio process tap, follows each track's own sample rate, and plays it back through the output device you choose."),
-            String(format: String(localized: "Designed and built by %@ with claude."), authorName),
+            "Full-rate playback and parametric EQ for Apple Music.",
+            "Captures Music.app with a Core Audio process tap, follows each track's own sample rate, and plays it back through the output device you choose.",
+            "Designed and built by \(authorName) with claude.",
             "",
         ].joined(separator: "\n\n")
     }
