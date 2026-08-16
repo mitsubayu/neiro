@@ -30,7 +30,7 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F13 | ライト/ダークモード追従 | セマンティックカラー+外観変化時の再描画 |
 | F14 | 設定の永続化 | UserDefaults に JSON(後方互換デコード) |
 | F15 | 再生中に起動/有効化しても、その曲のレートに追従する | 起動時に `log show` で直近のフォーマットを復元(ストリームは過去を見ないため) |
-| F16 | レート切替中であることが分かる | メニューバー `→ 44.1kHz` / パネル `Switching to 44.1kHz…`(橙) |
+| F16 | レート切替中であることが分かる | メニューバーとパネルに `→ 44.1kHz`(橙)を表示 |
 | F17 | EQ の即時バイパス(A/B 比較) | 処理だけを素通し。タップは保ったままなので瞬時 |
 | F18 | 出力デバイスごとにプリセットを自動適用 | デバイス UID → プリセット名を保存し、出力切替時に適用 |
 | F19 | 想定外のタップ形式で雑音を出さない | float32 インターリーブド以外は起動を拒否(Music は素の音で鳴る) |
@@ -38,8 +38,8 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F21 | 再生中の音をスペクトラム表示 | EQ カーブの背面に実時間 FFT を重ねる。パネルを閉じている間は解析も停止 |
 | F22 | パネルのピン留め | 右上のピンが ON の間は外側クリックで閉じない(外側クリック監視を張らない) |
 | F23 | EQ の Undo / Redo | ⌘Z / ⇧⌘Z とツールバーのボタン。ドラッグは 500ms 静定でまとめて1操作 |
-| F24 | About | ⚙ →「neiro について」で macOS 標準の About(アイコン・バージョン・説明・作者)。作者名は X へのリンク |
-| F25 | ヘルプ | ⚙ →「neiro のヘルプ」で操作と権限の要点をまとめたウィンドウ |
+| F24 | About | ⚙ →「About neiro」で macOS 標準の About(アイコン・バージョン・説明・作者)。作者名は X へのリンク |
+| F25 | ヘルプ | ⚙ →「Help neiro」で操作と権限の要点をまとめたウィンドウ(リサイズ可・先頭にアイコン) |
 | F26 | バンド列の折りたたみ | EQ ツールバーのボタンで右列を横方向に閉じる(画面が狭い場合向け)。閉じるとパネル幅が縮む |
 | F27 | ヘルプの日本語対応 | **専用テーブル `Help.strings`**(en/ja)。パネルは既定テーブルを使わないため訳が漏れない |
 
@@ -115,8 +115,11 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 ### 2.3 レートフォロー(TrackRateDetector + AppState)
 
 - 検出: `/usr/bin/log stream` を子プロセスで起動し Music のログを監視
-  - `Creating AudioQueue with format:'qlac', … sampleRate:96000` → ソースレート+コーデック fourcc
-  - デコーダ `Output format: … 24-bit …integer` / `… Int16` / float → ビット深度(float は nil)
+  - `Creating AudioQueue with format:'qlac', … sampleRate:96000` → ソースレート+コーデック fourcc。
+    **キューを作り直すときしか出ない**(同一フォーマットの曲変更では出ない)
+  - デコーダ `Output format: … 24-bit …integer` / `… Int16` / float → ビット深度(float は nil)。
+    **毎回出る**ので、行頭のデコーダ名(`ACAppleLosslessDecoder`→ALAC、`ACMP4AACBaseDecoder`→AAC)
+    からコーデックも判定する。総称ラッパ `ACCPEDecoderWrapper` は形式を名乗らないため無視
   - コーデック表示名: `*lac`→ALAC, `*aac*`→AAC, ほか fourcc 大文字
 - 復元: `log stream` は**起動後の行しか見えない**ため、起動/有効化時に一度だけ
   `log show --last 120s` で直近のレート・コーデック・ビット深度を復元する
@@ -226,14 +229,19 @@ neiro/
   DSP/BiquadKernel.swift        RBJ 係数+TDF-II 状態+応答計算
   DSP/EQProcessor.swift         RT安全なカスケード適用、ロックフリー係数公開、ミュート
   DSP/EQPreset.swift            プリセットモデル・内蔵6種・PresetStore
+  DSP/EQHistory.swift           Undo/Redo スタック(純粋型)+ EQSnapshot
   DSP/SpectrumAnalyzer.swift    RT安全なリングバッファ + vDSP FFT + 対数ビン化
-  UI/SpectrumBackingView.swift  自前30fpsループでレイヤーマスクを更新する AppKit ビュー
   Persistence/SettingsStore.swift  UserDefaults JSON (eqSettings.v1)
-  UI/StatusItemController.swift ステータスアイテム+マーキー+自前パネル
-  UI/MenuBarRootView.swift      パネル本体
+  UI/StatusItemController.swift ステータスアイテム+マーキー+自前パネル+ヘルプウィンドウ
+  UI/MenuBarRootView.swift      パネル本体(3列)+ ピン・履歴・⚙・About/Help のボタン群
+  UI/SpectrumBackingView.swift  自前30fpsループでレイヤーマスクを更新する AppKit ビュー
+  UI/HelpView.swift             ヘルプ本文(アイコン見出し+5トピック、Help テーブルで日本語化)
+  UI/AboutCredits.swift         About のクレジット(作者名に X へのリンク)
   UI/OutputDevicePicker.swift / EQBandRow.swift / ResponseCurveView.swift
+  Resources/{en,ja}.lproj/Help.strings  ヘルプ専用の文字列テーブル
   AppIcon.icns / IconGlyph.svg  アイコン(ユーザー作の筆記体 n SVG を白ティント+グラデ squircle)
-neiroTests/BiquadTests.swift    23件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス、FFT ピーク検出、リングバッファ
+neiroTests/BiquadTests.swift    28件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス、
+                                FFT ピーク検出、リングバッファ、Undo 履歴、About のリンク、デコーダ名からのコーデック判定
 ```
 
 ---
