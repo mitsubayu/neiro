@@ -68,6 +68,12 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
+    @ObservationIgnored private var trackStartedAt: Date?
+    @ObservationIgnored private var lastNotifiedTitle: String?
+    @ObservationIgnored private var isPlayingPerNotification = false
+    /// How long after a playerInfo track start we still treat playback as
+    /// being at the head (covers unified-log delivery lag).
+    private static let trackHeadWindow: TimeInterval = 6
     @ObservationIgnored private var nowPlayingTask: Task<Void, Never>?
     @ObservationIgnored private var nowPlayingObserver: NSObjectProtocol?
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
@@ -190,11 +196,26 @@ final class AppState {
         if resumePlaybackAfterStart {
             // Serial queue: runs after the start block above has finished.
             engine.controlQueue.async { [weak self] in
-                usleep(300_000)
+                usleep(150_000)
                 if restartTrackFromHead {
                     MusicRemote.setPosition(to: 0)
                 }
-                MusicRemote.play()
+                // A resume that silently fails (osascript timing out while
+                // Music is busy loading) leaves playback stopped for good, so
+                // confirm it took and retry.
+                var resumed = false
+                for attempt in 1...3 {
+                    MusicRemote.play()
+                    usleep(200_000)
+                    if MusicRemote.playerState() == "playing" {
+                        resumed = true
+                        break
+                    }
+                    Self.logger.error("resume attempt \(attempt) did not take effect")
+                }
+                if !resumed {
+                    Self.logger.error("could not resume Music after rate switch")
+                }
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     self.processor.setMuted(false)
@@ -212,6 +233,28 @@ final class AppState {
         } else {
             rateDetector.stop()
         }
+    }
+
+    /// playerInfo tells us a track just began (new title, or a transition into
+    /// Playing) without any AppleScript round-trip. That timestamp is what lets
+    /// the rate switch mute instantly instead of leaking a moment of audio.
+    private func noteTrackStart(title: String?, playerState: String?, at date: Date) {
+        let isPlaying = playerState == "Playing"
+        defer {
+            lastNotifiedTitle = title
+            isPlayingPerNotification = isPlaying
+        }
+        guard isPlaying else { return }
+        if title != lastNotifiedTitle || !isPlayingPerNotification {
+            trackStartedAt = date
+        }
+    }
+
+    /// True while we can be certain, without asking Music, that playback is at
+    /// the head of a freshly started track.
+    private var isAtKnownTrackHead: Bool {
+        guard isPlayingPerNotification, let startedAt = trackStartedAt else { return false }
+        return Date().timeIntervalSince(startedAt) <= Self.trackHeadWindow
     }
 
     /// Music logs the source rate when it builds a track's AudioQueue. Around
@@ -233,7 +276,17 @@ final class AppState {
     private func muteHeadIfSwitchPending() {
         guard let rate = lastTrackRate, rate != engineSampleRate,
               status == .running, settings.followTrackRate,
-              !isSwitchingRate, !muteCheckInFlight else { return }
+              !isSwitchingRate else { return }
+        // Fast path: playerInfo already told us a track just started, so mute
+        // now. Waiting for the two AppleScript round-trips below let a moment
+        // of audio through at the wrong rate before the switch — that audible
+        // blip is exactly the "plays briefly, then stops" symptom.
+        if isAtKnownTrackHead {
+            Self.logger.info("muting head immediately (track start known) pending switch to \(rate)")
+            processor.setMuted(true)
+            return
+        }
+        guard !muteCheckInFlight else { return }
         muteCheckInFlight = true
         Task { @MainActor [weak self] in
             defer { self?.muteCheckInFlight = false }
@@ -281,6 +334,14 @@ final class AppState {
         beginSwitching()
         Task { @MainActor [weak self] in
             guard let self else { return }
+            // Fast path: we already know a track just started and is playing,
+            // so skip both AppleScript round-trips and switch straight away.
+            if self.isAtKnownTrackHead {
+                Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate) at known track head")
+                await Task.detached { MusicRemote.pause() }.value
+                self.startEngine(resumePlaybackAfterStart: true, restartTrackFromHead: true)
+                return
+            }
             let state = await Task.detached { MusicRemote.playerState() }.value
             guard state == "playing" else {
                 Self.logger.info("switching silently (player \(state ?? "unreachable"))")
@@ -393,10 +454,14 @@ final class AppState {
         ) { [weak self] note in
             let title = note.userInfo?["Name"] as? String
             let artist = note.userInfo?["Artist"] as? String
+            let playerState = note.userInfo?["Player State"] as? String
+            let observedAt = Date()
             Task { @MainActor [weak self] in
-                self?.nowPlayingTitle = title
-                self?.nowPlayingArtist = artist
-                self?.refreshNowPlaying(havePayloadTitle: title != nil)
+                guard let self else { return }
+                self.noteTrackStart(title: title, playerState: playerState, at: observedAt)
+                self.nowPlayingTitle = title
+                self.nowPlayingArtist = artist
+                self.refreshNowPlaying(havePayloadTitle: title != nil)
             }
         }
         refreshNowPlaying(havePayloadTitle: false)
