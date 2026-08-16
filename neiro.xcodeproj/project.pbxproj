@@ -16,6 +16,7 @@
 		30E5B716500D97D7CDB2975F /* RateSwitchPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A9C8CBEF2B9FDE98A0383D /* RateSwitchPolicy.swift */; };
 		316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0769917D43131ABBEAC7ABAA /* SettingsStore.swift */; };
 		34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E160B23077B14806E1E35A1 /* EQProcessor.swift */; };
+		3AF18B48561113169F7666FD /* SpectrumAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3949710EE7C2A1AB310060 /* SpectrumAnalyzer.swift */; };
 		4A746BCBFACD33B4C1AC5639 /* BiquadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0EF54BC11A2943DF924034 /* BiquadTests.swift */; };
 		4A8A3EF9269ED99CFC537530 /* IconGlyph.svg in Resources */ = {isa = PBXBuildFile; fileRef = 35C73759FE93D83C90FC3131 /* IconGlyph.svg */; };
 		72A61408B4A9105ADBB3CA28 /* MusicProcessLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */; };
@@ -61,6 +62,7 @@
 		70635B0CAEF3000882BBE10F /* neiroTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = neiroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		82485437C1862615478D1401 /* EQBandRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQBandRow.swift; sourceTree = "<group>"; };
 		9E160B23077B14806E1E35A1 /* EQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQProcessor.swift; sourceTree = "<group>"; };
+		9E3949710EE7C2A1AB310060 /* SpectrumAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumAnalyzer.swift; sourceTree = "<group>"; };
 		A1FD8443645E9D6140C7C718 /* MusicProcessLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicProcessLocator.swift; sourceTree = "<group>"; };
 		C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDeviceMonitor.swift; sourceTree = "<group>"; };
 		C6F4A2437E9844E56B60F534 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 				E437D51DE4866987DCECAA8F /* EQModel.swift */,
 				D1CF606DE163CAE26CCAA1D7 /* EQPreset.swift */,
 				9E160B23077B14806E1E35A1 /* EQProcessor.swift */,
+				9E3949710EE7C2A1AB310060 /* SpectrumAnalyzer.swift */,
 			);
 			path = DSP;
 			sourceTree = "<group>";
@@ -285,6 +288,7 @@
 				30E5B716500D97D7CDB2975F /* RateSwitchPolicy.swift in Sources */,
 				2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */,
 				316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */,
+				3AF18B48561113169F7666FD /* SpectrumAnalyzer.swift in Sources */,
 				0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */,
 				A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */,
 			);

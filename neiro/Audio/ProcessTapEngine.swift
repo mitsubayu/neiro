@@ -24,6 +24,9 @@ final class ProcessTapEngine {
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "engine")
 
     private let processor: EQProcessor
+    /// Optional display tap: fed post-EQ so the spectrum shows what actually
+    /// reaches the DAC.
+    let spectrumTap = SpectrumTap()
     private let diagnostics = Diagnostics()
     private var diagnosticsTimer: DispatchSourceTimer?
     private var overloadListener: PropertyListener?
@@ -124,10 +127,12 @@ final class ProcessTapEngine {
         let processor = self.processor
         var newIOProcID: AudioDeviceIOProcID?
         let diagnostics = self.diagnostics
+        let spectrumTap = self.spectrumTap
         status = AudioDeviceCreateIOProcIDWithBlock(&newIOProcID, aggregateID, nil) {
             _, inInputData, _, outOutputData, _ in
             ProcessTapEngine.render(input: inInputData, output: outOutputData,
-                                    processor: processor, diagnostics: diagnostics)
+                                    processor: processor, diagnostics: diagnostics,
+                                    spectrumTap: spectrumTap)
         }
         guard status == noErr, let procID = newIOProcID else {
             stopLocked()
@@ -246,7 +251,8 @@ final class ProcessTapEngine {
     private static func render(input: UnsafePointer<AudioBufferList>,
                                output: UnsafeMutablePointer<AudioBufferList>,
                                processor: EQProcessor,
-                               diagnostics: Diagnostics) {
+                               diagnostics: Diagnostics,
+                               spectrumTap: SpectrumTap) {
         diagnostics.callbacks.wrappingAdd(1, ordering: .relaxed)
         let outputList = UnsafeMutableAudioBufferListPointer(output)
 
@@ -264,6 +270,7 @@ final class ProcessTapEngine {
         let frames = Int(inputBuffer.mDataByteSize) / (MemoryLayout<Float32>.size * inputChannels)
         diagnostics.lastInputFrames.store(frames, ordering: .relaxed)
         processor.process(inputData, frames: frames, channels: inputChannels)
+        spectrumTap.write(inputData, frames: frames, channels: inputChannels)
 
         for buffer in outputList {
             guard let outData = buffer.mData?.assumingMemoryBound(to: Float32.self) else { continue }

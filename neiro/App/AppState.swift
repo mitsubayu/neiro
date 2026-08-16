@@ -76,6 +76,12 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
+    /// Smoothed spectrum for the curve overlay, updated only while the panel
+    /// is open.
+    private(set) var spectrumLevels: [Float] = []
+    @ObservationIgnored private let analyzer = SpectrumAnalyzer()
+    @ObservationIgnored private var spectrumTask: Task<Void, Never>?
+
     /// Rate we are switching to while the change is in flight — surfaced in
     /// the UI so the silence during a switch is explained rather than
     /// mysterious.
@@ -89,6 +95,13 @@ final class AppState {
     @ObservationIgnored private var lastNotifiedTitle: String?
     @ObservationIgnored private var isPlayingPerNotification = false
     @ObservationIgnored private var lastDetectionAt: Date?
+    @ObservationIgnored private var pendingEvaluationSince: Date?
+    @ObservationIgnored private var muteDeadlineTask: Task<Void, Never>?
+    @ObservationIgnored private var trackStartsSinceDetection = 0
+    /// Ceiling on how long detections may keep pushing the evaluation back.
+    private static let maxDebounceWait: TimeInterval = 2.5
+    /// A head mute must never outlive this without a switch taking over.
+    private static let muteDeadline: TimeInterval = 4
     @ObservationIgnored private var detectorHealthTask: Task<Void, Never>?
     @ObservationIgnored private var lastDetectorRestartAt: Date?
     /// How long after a playerInfo track start we still treat playback as
@@ -175,6 +188,7 @@ final class AppState {
     /// delay guessed wrong and let a second switch start on top of the first.
     private func startEngine(resumePlaybackAfterStart: Bool = false,
                              restartTrackFromHead: Bool = false,
+                             expectedTrackTitle: String? = nil,
                              onEngineReady: (@MainActor () -> Void)? = nil) {
         musicWaitTask?.cancel()
 
@@ -233,8 +247,15 @@ final class AppState {
             // Serial queue: runs after the start block above has finished.
             engine.controlQueue.async { [weak self] in
                 usleep(150_000)
-                if restartTrackFromHead {
+                // If the listener picked a different track while we were
+                // rebuilding, seeking to 0:00 would yank playback away from
+                // their choice — only rewind the track we actually paused.
+                let currentTitle = MusicRemote.nowPlaying()?.title
+                let sameTrack = expectedTrackTitle == nil || currentTitle == expectedTrackTitle
+                if restartTrackFromHead, sameTrack {
                     MusicRemote.setPosition(to: 0)
+                } else if !sameTrack {
+                    Self.logger.info("track changed during the switch — leaving playback position alone")
                 }
                 // A resume that silently fails (osascript timing out while
                 // Music is busy loading) leaves playback stopped for good, so
@@ -283,7 +304,8 @@ final class AppState {
         guard isPlaying else { return }
         if title != lastNotifiedTitle || !isPlayingPerNotification {
             trackStartedAt = date
-            scheduleDetectorHealthCheck(trackStartedAt: date)
+            trackStartsSinceDetection += 1
+            scheduleDetectorHealthCheck()
         }
     }
 
@@ -291,13 +313,17 @@ final class AppState {
     /// arrives the stream is alive but no longer delivering (logd restarted,
     /// child wedged) — restart it, which also re-reads the recent log and
     /// recovers the current track's rate.
-    private func scheduleDetectorHealthCheck(trackStartedAt: Date) {
+    private func scheduleDetectorHealthCheck() {
         guard settings.isEnabled, settings.followTrackRate else { return }
         detectorHealthTask?.cancel()
         detectorHealthTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(8))
+            try? await Task.sleep(for: .seconds(10))
             guard !Task.isCancelled, let self else { return }
-            if let last = self.lastDetectionAt, last >= trackStartedAt { return }
+            // Not every track start logs a format line (a gapless
+            // same-format continuation reuses the queue), so one silent start
+            // proves nothing. Two in a row with no line at all does.
+            guard self.trackStartsSinceDetection >= 2 else { return }
+            if let last = self.lastDetectionAt, Date().timeIntervalSince(last) < 60 { return }
             if let restarted = self.lastDetectorRestartAt,
                Date().timeIntervalSince(restarted) < 60 { return }
             Self.logger.error("no format detected 8s after a track start — restarting the detector")
@@ -320,6 +346,7 @@ final class AppState {
     private func handleDetectedTrackRate(_ rate: Double) {
         lastTrackRate = rate
         lastDetectionAt = Date()
+        trackStartsSinceDetection = 0
         Self.logger.info("detected track rate \(rate)")
         muteHeadIfSwitchPending()
         scheduleRateSwitchEvaluation()
@@ -340,7 +367,7 @@ final class AppState {
         // blip is exactly the "plays briefly, then stops" symptom.
         if isAtKnownTrackHead {
             Self.logger.info("muting head immediately (track start known) pending switch to \(rate)")
-            processor.setMuted(true)
+            armHeadMute()
             return
         }
         guard !muteCheckInFlight else { return }
@@ -353,17 +380,46 @@ final class AppState {
             let position = await Task.detached { MusicRemote.playerPosition() }.value ?? .infinity
             if position <= 5, self.lastTrackRate != self.engineSampleRate, !self.isSwitchingRate {
                 Self.logger.info("muting head at \(position)s pending rate switch")
-                self.processor.setMuted(true)
+                self.armHeadMute()
             }
         }
     }
 
     private func scheduleRateSwitchEvaluation(afterMilliseconds delay: Int = 1200) {
+        let now = Date()
+        if pendingEvaluationSince == nil { pendingEvaluationSince = now }
+        // A track change that crosses codecs (ALAC → AAC) makes Music log both
+        // formats for several seconds. Detections then arrive faster than the
+        // debounce window and, without this ceiling, keep pushing the
+        // evaluation back forever — the head mute never lifts and playback
+        // goes silent.
+        var effectiveDelay = delay
+        if let since = pendingEvaluationSince,
+           now.timeIntervalSince(since) >= Self.maxDebounceWait {
+            effectiveDelay = 0
+        }
         pendingRateTask?.cancel()
         pendingRateTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(delay))
+            if effectiveDelay > 0 {
+                try? await Task.sleep(for: .milliseconds(effectiveDelay))
+            }
             guard !Task.isCancelled else { return }
             self?.evaluateRateSwitch()
+        }
+    }
+
+    /// Mutes for an upcoming switch with a hard deadline, so no failure path
+    /// can leave the output silent.
+    private func armHeadMute() {
+        processor.setMuted(true)
+        guard muteDeadlineTask == nil else { return }
+        muteDeadlineTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.muteDeadline))
+            guard !Task.isCancelled, let self else { return }
+            self.muteDeadlineTask = nil
+            guard !self.isSwitchingRate else { return }   // the switch owns it now
+            Self.logger.error("head mute expired without a switch — unmuting")
+            self.processor.setMuted(false)
         }
     }
 
@@ -387,6 +443,7 @@ final class AppState {
     }
 
     private func evaluateRateSwitch() {
+        pendingEvaluationSince = nil
         let decision = RateSwitchPolicy.decide(rateSwitchContext)
         Self.logger.info("evaluate: track=\(self.lastTrackRate ?? 0) engine=\(self.engineSampleRate) → \(String(describing: decision), privacy: .public)")
         switch decision {
@@ -456,6 +513,7 @@ final class AppState {
         }
         startEngine(resumePlaybackAfterStart: restartingTrack,
                     restartTrackFromHead: restartingTrack,
+                    expectedTrackTitle: restartingTrack ? nowPlayingTitle : nil,
                     onEngineReady: onReady)
     }
 
@@ -480,6 +538,8 @@ final class AppState {
     /// Single exit point for a switch: unmute, drop the pending-target text,
     /// and stand the watchdog down.
     private func endSwitching() {
+        muteDeadlineTask?.cancel()
+        muteDeadlineTask = nil
         processor.setMuted(false)
         isSwitchingRate = false
         switchTargetRate = nil
@@ -595,6 +655,36 @@ final class AppState {
                 self.nowPlayingArtist = nil
             }
             self.nowPlayingArtwork = result.1 ? NSImage(contentsOfFile: artworkPath) : nil
+        }
+    }
+
+    // MARK: - Spectrum
+
+    /// Driven by the panel's lifetime: the IO thread does not even copy
+    /// samples while nothing is on screen.
+    func setSpectrumActive(_ active: Bool) {
+        guard active != engine.spectrumTap.isCapturing else { return }
+        engine.spectrumTap.setActive(active)
+        spectrumTask?.cancel()
+        guard active else {
+            spectrumTask = nil
+            spectrumLevels = []
+            return
+        }
+        spectrumTask = Task { @MainActor [weak self] in
+            let window = UnsafeMutablePointer<Float>.allocate(capacity: SpectrumTap.fftSize)
+            window.initialize(repeating: 0, count: SpectrumTap.fftSize)
+            defer { window.deallocate() }
+            while !Task.isCancelled {
+                guard let self else { return }
+                if self.engine.spectrumTap.latestWindow(into: window) {
+                    self.analyzer.analyze(window: window, sampleRate: self.engineSampleRate)
+                } else {
+                    self.analyzer.decay()
+                }
+                self.spectrumLevels = self.analyzer.levels
+                try? await Task.sleep(for: .milliseconds(33))
+            }
         }
     }
 

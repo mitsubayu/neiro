@@ -131,7 +131,7 @@ struct MenuBarRootView: View {
                 Text("Saves the current bands and pre-gain.")
             }
 
-            ResponseCurveView(bands: $appState.settings.bands,
+            LiveResponseCurve(bands: $appState.settings.bands,
                               preGainDB: appState.settings.preGainDB,
                               sampleRate: appState.engineSampleRate)
                 .frame(height: 150)
@@ -193,6 +193,8 @@ struct MenuBarRootView: View {
         }
         .padding(14)
         .frame(width: 380)
+        .onAppear { appState.setSpectrumActive(true) }
+        .onDisappear { appState.setSpectrumActive(false) }
     }
 
     private var statusText: String {
@@ -214,5 +216,23 @@ struct MenuBarRootView: View {
         case .error: return .red
         case .disabled: return .secondary
         }
+    }
+}
+
+
+/// Reads the spectrum inside its own body so a 30fps update invalidates only
+/// the curve. Reading it in the panel's body re-evaluated the whole hierarchy
+/// — including the full-width artwork — thirty times a second (~33% CPU).
+private struct LiveResponseCurve: View {
+    @Environment(AppState.self) private var appState
+    @Binding var bands: [EQBand]
+    let preGainDB: Double
+    let sampleRate: Double
+
+    var body: some View {
+        ResponseCurveView(bands: $bands,
+                          preGainDB: preGainDB,
+                          sampleRate: sampleRate,
+                          spectrum: appState.spectrumLevels)
     }
 }
