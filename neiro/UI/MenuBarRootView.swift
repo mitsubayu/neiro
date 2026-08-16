@@ -172,6 +172,9 @@ struct MenuBarRootView: View {
     }
 
     private var statusText: String {
+        if let target = appState.switchTargetRate {
+            return "Switching to \(AppState.rateLabel(target))…"
+        }
         if case .running = appState.status {
             let codec = appState.trackCodec.map { "\($0) " } ?? ""
             return "Running · \(codec)\(appState.formatLabel)"
@@ -180,11 +183,12 @@ struct MenuBarRootView: View {
     }
 
     private var statusColor: Color {
+        if appState.switchTargetRate != nil { return .orange }
         switch appState.status {
-        case .running: .green
-        case .waitingForMusic: .orange
-        case .error: .red
-        case .disabled: .secondary
+        case .running: return .green
+        case .waitingForMusic: return .orange
+        case .error: return .red
+        case .disabled: return .secondary
         }
     }
 }

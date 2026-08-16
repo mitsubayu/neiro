@@ -36,19 +36,27 @@ final class AppState {
     private(set) var nowPlayingArtist: String?
     private(set) var nowPlayingArtwork: NSImage?
 
-    /// Codec + format suffix for the menu bar ("ALAC 96kHz/24bit"). The
-    /// scrolling title itself is rendered by StatusMarqueeView.
+    /// Codec + format suffix for the menu bar ("ALAC 96kHz/24bit"), or the
+    /// pending target while a rate switch is in flight. The scrolling title
+    /// itself is rendered by StatusMarqueeView.
     var menuBarSuffix: String {
-        (trackCodec.map { "\($0) " } ?? "") + formatLabel
+        if let target = switchTargetRate {
+            return "→ \(Self.rateLabel(target))"
+        }
+        return (trackCodec.map { "\($0) " } ?? "") + formatLabel
+    }
+
+    static func rateLabel(_ rate: Double) -> String {
+        let kilohertz = rate / 1000
+        return kilohertz == kilohertz.rounded()
+            ? String(format: "%.0fkHz", kilohertz)
+            : String(format: "%.1fkHz", kilohertz)
     }
 
     /// "96kHz/24bit" (bit depth omitted for float/unknown sources) — shown in
     /// the menu bar next to the icon and in the status row.
     var formatLabel: String {
-        let kilohertz = engineSampleRate / 1000
-        let rateText = kilohertz == kilohertz.rounded()
-            ? String(format: "%.0fkHz", kilohertz)
-            : String(format: "%.1fkHz", kilohertz)
+        let rateText = Self.rateLabel(engineSampleRate)
         if let depth = trackBitDepth {
             return "\(rateText)/\(depth)bit"
         }
@@ -68,6 +76,15 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
+    /// Rate we are switching to while the change is in flight — surfaced in
+    /// the UI so the silence during a switch is explained rather than
+    /// mysterious.
+    private(set) var switchTargetRate: Double?
+    /// The running engine was built before we knew the playing track's source
+    /// rate (launch or enable mid-playback), so a correction is expected and
+    /// should not restart the track.
+    @ObservationIgnored private var engineBuiltWithoutTrackRate = false
+    @ObservationIgnored private var switchWatchdogTask: Task<Void, Never>?
     @ObservationIgnored private var trackStartedAt: Date?
     @ObservationIgnored private var lastNotifiedTitle: String?
     @ObservationIgnored private var isPlayingPerNotification = false
@@ -149,15 +166,21 @@ final class AppState {
         return OutputDeviceMonitor.currentDefaultOutput()?.uid
     }
 
-    private func startEngine(resumePlaybackAfterStart: Bool = false, restartTrackFromHead: Bool = false) {
+    /// `onEngineReady` runs on the main actor once the rebuild has finished
+    /// (successfully or not). Switches that don't touch playback use it to
+    /// release the in-flight flag exactly when the engine is up — a fixed
+    /// delay guessed wrong and let a second switch start on top of the first.
+    private func startEngine(resumePlaybackAfterStart: Bool = false,
+                             restartTrackFromHead: Bool = false,
+                             onEngineReady: (@MainActor () -> Void)? = nil) {
         musicWaitTask?.cancel()
 
         // A switch sequence that can't reach its resume closure must release
         // the in-progress flag, or evaluations deadlock on it forever.
         func abandonSwitch() {
+            onEngineReady?()
             if resumePlaybackAfterStart {
-                processor.setMuted(false)
-                isSwitchingRate = false
+                endSwitching()
                 MusicRemote.play()
             }
         }
@@ -176,6 +199,11 @@ final class AppState {
 
         activeOutputUID = outputUID
         let preferredRate = settings.followTrackRate ? lastTrackRate : nil
+        if !resumePlaybackAfterStart, preferredRate == nil {
+            // Built blind: if the rate detector reports the playing track's
+            // rate shortly after this, correcting it is expected.
+            engineBuiltWithoutTrackRate = true
+        }
         let engine = self.engine
         engine.controlQueue.async { [weak self] in
             do {
@@ -185,11 +213,13 @@ final class AppState {
                 Task { @MainActor [weak self] in
                     self?.status = .running
                     self?.engineSampleRate = rate
+                    onEngineReady?()
                 }
             } catch {
                 Task { @MainActor [weak self] in
                     self?.status = .error(error.localizedDescription)
                     self?.activeOutputUID = nil
+                    onEngineReady?()
                 }
             }
         }
@@ -206,7 +236,9 @@ final class AppState {
                 var resumed = false
                 for attempt in 1...3 {
                     MusicRemote.play()
-                    usleep(200_000)
+                    // Music needs a beat to actually start after a seek;
+                    // checking too eagerly just sends a redundant play.
+                    usleep(500_000)
                     if MusicRemote.playerState() == "playing" {
                         resumed = true
                         break
@@ -217,9 +249,7 @@ final class AppState {
                     Self.logger.error("could not resume Music after rate switch")
                 }
                 Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    self.processor.setMuted(false)
-                    self.isSwitchingRate = false
+                    self?.endSwitching()
                 }
             }
         }
@@ -318,65 +348,116 @@ final class AppState {
     ///   its head (the user's complaint with LosslessSwitcher-style behavior).
     /// - Mid-track (>5s) → this is Music pre-rolling the *next* item at a
     ///   different rate; defer and re-check until the boundary passes.
+    private var rateSwitchContext: RateSwitchContext {
+        RateSwitchContext(detectedRate: lastTrackRate,
+                          engineRate: engineSampleRate,
+                          isEnabled: settings.isEnabled,
+                          followTrackRate: settings.followTrackRate,
+                          isEngineRunning: status == .running,
+                          isSwitchInFlight: isSwitchingRate,
+                          isAtKnownTrackHead: isAtKnownTrackHead,
+                          engineBuiltWithoutTrackRate: engineBuiltWithoutTrackRate)
+    }
+
     private func evaluateRateSwitch() {
-        Self.logger.info("evaluate: track=\(self.lastTrackRate ?? 0) engine=\(self.engineSampleRate) status=\(String(describing: self.status)) follow=\(self.settings.followTrackRate) switching=\(self.isSwitchingRate)")
-        guard let rate = lastTrackRate, settings.isEnabled, settings.followTrackRate,
-              status == .running, rate != engineSampleRate else {
+        let decision = RateSwitchPolicy.decide(rateSwitchContext)
+        Self.logger.info("evaluate: track=\(self.lastTrackRate ?? 0) engine=\(self.engineSampleRate) → \(String(describing: decision), privacy: .public)")
+        switch decision {
+        case .idle:
             // No switch needed after all (e.g. rate flapped back) — make sure
             // a head-mute from a premature detection doesn't stick.
-            processor.setMuted(false)
-            return
-        }
-        if isSwitchingRate {
+            endSwitching()
+            // The engine's rate is confirmed against a real detection now, so
+            // it no longer counts as built blind.
+            engineBuiltWithoutTrackRate = false
+        case .waitForInFlightSwitch:
             scheduleRateSwitchEvaluation()
-            return
-        }
-        beginSwitching()
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            // Fast path: we already know a track just started and is playing,
-            // so skip both AppleScript round-trips and switch straight away.
-            if self.isAtKnownTrackHead {
-                Self.logger.info("switching engine \(self.engineSampleRate) -> \(rate) at known track head")
+        case .deferToTrackBoundary(let milliseconds):
+            endSwitching()
+            scheduleRateSwitchEvaluation(afterMilliseconds: milliseconds)
+        case .switchKeepingPosition:
+            beginSwitching()
+            performSwitch(restartingTrack: false)
+        case .switchRestartingTrack:
+            beginSwitching()
+            Task { @MainActor [weak self] in
                 await Task.detached { MusicRemote.pause() }.value
-                self.startEngine(resumePlaybackAfterStart: true, restartTrackFromHead: true)
-                return
+                self?.performSwitch(restartingTrack: true)
             }
-            let state = await Task.detached { MusicRemote.playerState() }.value
-            guard state == "playing" else {
-                Self.logger.info("switching silently (player \(state ?? "unreachable"))")
-                self.processor.setMuted(false)
-                self.startEngine()
-                self.isSwitchingRate = false
-                return
+        case .queryPlayer:
+            beginSwitching()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let state = await Task.detached { MusicRemote.playerState() }.value
+                let position = state == "playing"
+                    ? await Task.detached { MusicRemote.playerPosition() }.value
+                    : nil
+                let followUp = RateSwitchPolicy.decideAfterQuery(playerState: state, position: position)
+                Self.logger.info("after query: state=\(state ?? "unreachable") position=\(position ?? -1) → \(String(describing: followUp), privacy: .public)")
+                switch followUp {
+                case .switchRestartingTrack:
+                    await Task.detached { MusicRemote.pause() }.value
+                    self.performSwitch(restartingTrack: true)
+                case .deferToTrackBoundary(let milliseconds):
+                    self.endSwitching()
+                    self.scheduleRateSwitchEvaluation(afterMilliseconds: milliseconds)
+                default:
+                    self.performSwitch(restartingTrack: false)
+                }
             }
-            let position = await Task.detached { MusicRemote.playerPosition() }.value ?? 0
-            guard position <= 5 else {
-                Self.logger.info("deferring switch: mid-track at \(position)s")
-                self.processor.setMuted(false)
-                self.isSwitchingRate = false
-                self.scheduleRateSwitchEvaluation(afterMilliseconds: 2000)
-                return
-            }
-            Self.logger.info("switching engine \(self.engineSampleRate), restarting track from head (was at \(position)s)")
-            await Task.detached { MusicRemote.pause() }.value
-            self.startEngine(resumePlaybackAfterStart: true, restartTrackFromHead: true)
         }
     }
 
+    /// Rebuilds the engine at the detected rate. `restartingTrack` means we
+    /// paused first and must seek back to 0:00 and resume.
+    private func performSwitch(restartingTrack: Bool) {
+        switchTargetRate = lastTrackRate
+        Self.logger.info("switching engine \(self.engineSampleRate) -> \(self.lastTrackRate ?? 0) (restart=\(restartingTrack))")
+        if !restartingTrack {
+            // Nothing pauses playback on this path, so silence our output for
+            // the rebuild instead of letting the old rate leak through.
+            processor.setMuted(true)
+        }
+        engineBuiltWithoutTrackRate = false
+        // When playback isn't touched there is no resume closure, so the
+        // engine-ready callback is where that path ends.
+        var onReady: (@MainActor () -> Void)?
+        if !restartingTrack {
+            onReady = { [weak self] in
+                self?.endSwitching()
+            }
+        }
+        startEngine(resumePlaybackAfterStart: restartingTrack,
+                    restartTrackFromHead: restartingTrack,
+                    onEngineReady: onReady)
+    }
+
     /// Marks the switch in progress with a failsafe: if anything in the
-    /// pause→rebuild→resume chain dies without clearing the flag, every later
-    /// evaluation would silently reschedule forever. Reset it after 10s.
+    /// pause→rebuild→resume chain dies without finishing, every later
+    /// evaluation would silently reschedule forever.
     private func beginSwitching() {
         isSwitchingRate = true
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(10))
-            guard let self, self.isSwitchingRate else { return }
-            Self.logger.error("switch watchdog fired: clearing stuck isSwitchingRate")
-            self.isSwitchingRate = false
-            self.processor.setMuted(false)
+        switchWatchdogTask?.cancel()
+        switchWatchdogTask = Task { @MainActor [weak self] in
+            // Generous: AppleScript round-trips against a busy Music can take
+            // seconds each, and a switch that is merely slow must not be
+            // mistaken for a stuck one.
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled, let self, self.isSwitchingRate else { return }
+            Self.logger.error("switch watchdog fired: clearing stuck switch")
+            self.endSwitching()
             self.scheduleRateSwitchEvaluation()
         }
+    }
+
+    /// Single exit point for a switch: unmute, drop the pending-target text,
+    /// and stand the watchdog down.
+    private func endSwitching() {
+        processor.setMuted(false)
+        isSwitchingRate = false
+        switchTargetRate = nil
+        switchWatchdogTask?.cancel()
+        switchWatchdogTask = nil
     }
 
     private func stopEngine() {

@@ -13,6 +13,7 @@
 		0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B393FA4F14921B4956CD079 /* StatusItemController.swift */; };
 		2B2DF20CDB98449D99DAB190 /* NeiroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50EDEA29D6145FC019262B11 /* NeiroApp.swift */; };
 		2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */; };
+		30E5B716500D97D7CDB2975F /* RateSwitchPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A9C8CBEF2B9FDE98A0383D /* RateSwitchPolicy.swift */; };
 		316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0769917D43131ABBEAC7ABAA /* SettingsStore.swift */; };
 		34384D15A01C71D715D98F0F /* EQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E160B23077B14806E1E35A1 /* EQProcessor.swift */; };
 		4A746BCBFACD33B4C1AC5639 /* BiquadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0EF54BC11A2943DF924034 /* BiquadTests.swift */; };
@@ -47,6 +48,7 @@
 		1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapEngine.swift; sourceTree = "<group>"; };
 		14B019F35C3F44EF7E71F95A /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1C0EF54BC11A2943DF924034 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
+		32A9C8CBEF2B9FDE98A0383D /* RateSwitchPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateSwitchPolicy.swift; sourceTree = "<group>"; };
 		34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRateDetector.swift; sourceTree = "<group>"; };
 		35C73759FE93D83C90FC3131 /* IconGlyph.svg */ = {isa = PBXFileReference; path = IconGlyph.svg; sourceTree = "<group>"; };
 		42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputDevicePicker.swift; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 				020D94E22C12B79F11A64774 /* MusicRemote.swift */,
 				C58D41D4CA473209441E3C3F /* OutputDeviceMonitor.swift */,
 				1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */,
+				32A9C8CBEF2B9FDE98A0383D /* RateSwitchPolicy.swift */,
 				34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */,
 			);
 			path = Audio;
@@ -279,6 +282,7 @@
 				99BEBFBE3B6BAAEF309F15CB /* OutputDeviceMonitor.swift in Sources */,
 				E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */,
 				AB135675CA9BBA074F8C89D8 /* ProcessTapEngine.swift in Sources */,
+				30E5B716500D97D7CDB2975F /* RateSwitchPolicy.swift in Sources */,
 				2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */,
 				316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */,
 				0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */,

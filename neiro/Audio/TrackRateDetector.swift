@@ -22,8 +22,60 @@ final class TrackRateDetector {
     private var lineBuffer = Data()
     private let queue = DispatchQueue(label: "neiro.ratedetector")
 
+    /// Predicate shared by the live stream and the one-shot lookback.
+    private static let predicate = "process == \"Music\" AND (eventMessage CONTAINS \"Creating AudioQueue with format\" OR eventMessage CONTAINS \"Output format:\")"
+
     func start() {
-        queue.async { [weak self] in self?.startLocked() }
+        queue.async { [weak self] in
+            self?.startLocked()
+            self?.recoverRecentFormatLocked()
+        }
+    }
+
+    /// The live stream only ever sees *new* lines, so a track that was already
+    /// playing when we started gives us nothing — the engine would then run at
+    /// whatever rate the device happened to be on until the next track. Replay
+    /// the recent log once so the current track's format is known immediately.
+    private func recoverRecentFormatLocked(lookbackSeconds: Int = 120) {
+        let logProcess = Process()
+        logProcess.executableURL = URL(fileURLWithPath: "/usr/bin/log")
+        logProcess.arguments = [
+            "show",
+            "--last", "\(lookbackSeconds)s",
+            "--predicate", Self.predicate,
+            "--style", "ndjson",
+        ]
+        let pipe = Pipe()
+        logProcess.standardOutput = pipe
+        logProcess.standardError = FileHandle.nullDevice
+        do {
+            try logProcess.run()
+        } catch {
+            return
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        logProcess.waitUntilExit()
+
+        var latestRate: Double?
+        var latestCodec: String?
+        var latestFormat: (sampleRate: Double, bitDepth: Int?)?
+        for line in data.split(separator: UInt8(ascii: "\n")) {
+            guard let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+                  let message = json["eventMessage"] as? String else { continue }
+            if let rate = Self.parseSampleRate(fromEventMessage: message) {
+                latestRate = rate
+                latestCodec = Self.parseCodec(fromEventMessage: message) ?? latestCodec
+            } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
+                latestFormat = format
+            }
+        }
+        guard latestRate != nil || latestFormat != nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if let codec = latestCodec { self.onCodecDetected?(codec) }
+            if let format = latestFormat { self.onBitDepthDetected?(format.sampleRate, format.bitDepth) }
+            if let rate = latestRate { self.onRateDetected?(rate) }
+        }
     }
 
     func stop() {
@@ -46,7 +98,7 @@ final class TrackRateDetector {
         logProcess.executableURL = URL(fileURLWithPath: "/usr/bin/log")
         logProcess.arguments = [
             "stream",
-            "--predicate", "process == \"Music\" AND (eventMessage CONTAINS \"Creating AudioQueue with format\" OR eventMessage CONTAINS \"Output format:\")",
+            "--predicate", Self.predicate,
             "--style", "ndjson",
         ]
         let pipe = Pipe()

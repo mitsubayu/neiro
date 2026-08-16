@@ -29,6 +29,8 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F12 | ログイン時自動起動(トグルで無効化可) | `SMAppService.mainApp` |
 | F13 | ライト/ダークモード追従 | セマンティックカラー+外観変化時の再描画 |
 | F14 | 設定の永続化 | UserDefaults に JSON(後方互換デコード) |
+| F15 | 再生中に起動/有効化しても、その曲のレートに追従する | 起動時に `log show` で直近のフォーマットを復元(ストリームは過去を見ないため) |
+| F16 | レート切替中であることが分かる | メニューバー `→ 44.1kHz` / パネル `Switching to 44.1kHz…`(橙) |
 
 ### 1.2 非機能要件
 
@@ -81,8 +83,20 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
   - `Creating AudioQueue with format:'qlac', … sampleRate:96000` → ソースレート+コーデック fourcc
   - デコーダ `Output format: … 24-bit …integer` / `… Int16` / float → ビット深度(float は nil)
   - コーデック表示名: `*lac`→ALAC, `*aac*`→AAC, ほか fourcc 大文字
+- 復元: `log stream` は**起動後の行しか見えない**ため、起動/有効化時に一度だけ
+  `log show --last 120s` で直近のレート・コーデック・ビット深度を復元する
 - 判断: 検出は 1.2s デバウンス(Music は曲境界で複数レートのキューを作るため)。
-  レート差があれば切替。実行中フラグには 10s ウォッチドッグ
+  判断そのものは純粋関数 `RateSwitchPolicy`(下表)に切り出してテストで固定。
+  実行中フラグには 20s ウォッチドッグ(完了時にキャンセル)
+
+| 状況 | 判断 | 動作 |
+|---|---|---|
+| レート一致 / 無効 / エンジン停止 | `idle` | ミュート解除のみ |
+| 切替実行中 | `waitForInFlightSwitch` | 完了後に再評価 |
+| レート未知のまま組んだエンジン(起動直後) | `switchKeepingPosition` | 再構築のみ。**曲は止めない** |
+| 曲頭が確定(playerInfo) | `switchRestartingTrack` | 一時停止 → 再構築 → 0:00 → 再開 |
+| 判断材料不足 | `queryPlayer` | Music に状態/位置を問い合わせて再判断 |
+| 再生位置 >5s(次曲の先読み) | `deferToTrackBoundary` | 2s 後に再評価。現在の曲は無傷 |
 - 曲頭の判定: `playerInfo` 通知(タイトル変化 or 停止→Playing 遷移)の時刻を記録し、
   6秒以内なら「曲頭で再生中」と**AppleScript なしで**確定できる(`isAtKnownTrackHead`)
 - 切替シーケンス(F4/F5):
@@ -155,6 +169,7 @@ neiro/
   Audio/ProcessTapEngine.swift  タップ+集約+IOProc のライフサイクル、レートマッチング、診断ログ
   Audio/TrackRateDetector.swift log stream 子プロセス、レート/コーデック/ビット深度のパース
   Audio/MusicRemote.swift       osascript ラッパ(3s timeout、Music 起動ガード)
+  Audio/RateSwitchPolicy.swift  切替判断の純粋関数(状況 → 動作)。UI/IO を持たずテスト可能
   DSP/EQModel.swift             EQBand / EQSettings(Codable、後方互換デコード)
   DSP/BiquadKernel.swift        RBJ 係数+TDF-II 状態+応答計算
   DSP/EQProcessor.swift         RT安全なカスケード適用、ロックフリー係数公開、ミュート
@@ -164,7 +179,7 @@ neiro/
   UI/MenuBarRootView.swift      パネル本体
   UI/OutputDevicePicker.swift / EQBandRow.swift / ResponseCurveView.swift
   AppIcon.icns / IconGlyph.svg  アイコン(ユーザー作の筆記体 n SVG を白ティント+グラデ squircle)
-neiroTests/BiquadTests.swift    12件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット
+neiroTests/BiquadTests.swift    18件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー
 ```
 
 ---
