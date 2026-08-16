@@ -115,6 +115,8 @@ final class AppState {
     private static let trackHeadWindow: TimeInterval = 6
     @ObservationIgnored private var nowPlayingTask: Task<Void, Never>?
     @ObservationIgnored private var nowPlayingObserver: NSObjectProtocol?
+    /// Set by StatusItemController so the UI can dismiss its own panel.
+    @ObservationIgnored var closePanelHandler: (() -> Void)?
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
 
     init() {
@@ -676,6 +678,10 @@ final class AppState {
                 self.nowPlayingArtwork = nil
             }
         }
+    }
+
+    func closePanel() {
+        closePanelHandler?()
     }
 
     // MARK: - Undo / redo

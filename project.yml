@@ -7,6 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 7N7LUCUW5K
     ENABLE_HARDENED_RUNTIME: NO
@@ -21,6 +23,9 @@ targets:
       properties:
         CFBundleDisplayName: neiro
         CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHumanReadableCopyright: © 2026 mitsubayu
         LSUIElement: true
         NSAudioCaptureUsageDescription: neiro captures Music.app's audio output to apply the parametric EQ you configure.
         NSAppleEventsUsageDescription: neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.

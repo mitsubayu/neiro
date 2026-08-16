@@ -67,6 +67,7 @@ final class StatusItemController: NSObject {
                 widthConstraint,
             ])
         }
+        appState.closePanelHandler = { [weak self] in self?.closePanel() }
         observeState()
         refresh()
         Self.logger.error("status item init done, button=\(self.statusItem.button != nil)")

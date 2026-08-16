@@ -171,7 +171,7 @@ struct MenuBarRootView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Bands").font(.caption.bold()).foregroundStyle(.secondary)
-                Text("freq / gain / Q").font(.caption2).foregroundStyle(.tertiary)
+                Text("gain / Q / freq").font(.caption2).foregroundStyle(.tertiary)
                 Spacer()
                 PinButton()
             }
@@ -187,8 +187,9 @@ struct MenuBarRootView: View {
                 Spacer()
                 Menu {
                     Toggle("Enable neiro", isOn: $appState.settings.isEnabled)
-                    Divider()
                     Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
+                    Divider()
+                    AboutButton()
                 } label: {
                     Image(systemName: "gearshape")
                 }
@@ -222,6 +223,30 @@ private struct HistoryButtons: View {
             .keyboardShortcut("z", modifiers: [.command, .shift])
             .disabled(!appState.canRedo)
             .help("Redo (⇧⌘Z)")
+        }
+    }
+}
+
+/// Shows the standard macOS About window. Our panel floats at pop-up-menu
+/// level, so it steps aside first or it would cover the About window.
+private struct AboutButton: View {
+    @Environment(AppState.self) private var appState
+
+    private static let blurb = "Full-rate playback and parametric EQ for Apple Music.\n\n"
+        + "Captures Music.app with a Core Audio process tap, follows each track's "
+        + "own sample rate, and plays it back through the output device you choose.\n\n"
+        + "Designed and built by mitsubayu with claude."
+
+    var body: some View {
+        Button("About neiro") {
+            appState.closePanel()
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.orderFrontStandardAboutPanel(options: [
+                .credits: NSAttributedString(string: Self.blurb, attributes: [
+                    .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                ]),
+            ])
         }
     }
 }

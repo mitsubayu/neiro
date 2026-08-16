@@ -38,6 +38,7 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F21 | 再生中の音をスペクトラム表示 | EQ カーブの背面に実時間 FFT を重ねる。パネルを閉じている間は解析も停止 |
 | F22 | パネルのピン留め | 右上のピンが ON の間は外側クリックで閉じない(外側クリック監視を張らない) |
 | F23 | EQ の Undo / Redo | ⌘Z / ⇧⌘Z とツールバーのボタン。ドラッグは 500ms 静定でまとめて1操作 |
+| F24 | About | ⚙ →「About neiro」で macOS 標準の About(アイコン・バージョン・説明・作者) |
 
 ### 1.2 非機能要件
 
@@ -181,7 +182,10 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 |---|---|---|
 | 左 | 350 | ジャケ写。曲名・アーティスト・`ALAC 44.1kHz/16bit` を下部に重ねる |
 | 中 | 400 | neiro 表示+状態 / Output+bit-perfect / EQ ツールバー(Presets・Bypass・Reset・Undo/Redo)/ 応答カーブ+スペクトラム / Pre-gain |
-| 右 | 400 | Bands 10本(有効チェック + f・g・Q の各スライダーと数値)。右上にピン、右下に ⚙(Enable neiro・Launch at login)と Quit |
+| 右 | 400 | Bands 10本(有効チェック + **gain・Q・freq** の各スライダーと数値)。右上にピン、右下に ⚙(Enable neiro・Launch at login・About)と Quit |
+
+- バンドの並びは慣習の freq→gain→Q ではなく **gain→Q→freq**。10本が既定周波数に固定された
+  グラフィック EQ 的な使い方では触る頻度がこの順で、縦に並べたとき増減が読み取りやすい
 
 - 増やした幅はカーブに配分(ハンドルのドラッグしやすさを優先)
 - 全体のオン/オフは日常操作ではないため ⚙ メニューへ。A/B は Bypass が担う

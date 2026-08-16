@@ -13,14 +13,18 @@ struct EQBandRow: View {
                 .help(typeLabel)
 
             Group {
-                parameter("f", value: logBinding($band.frequency, range: 20...20_000),
-                          range: log10(20)...log10(20_000),
-                          readout: frequencyLabel, readoutWidth: 44)
+                // Gain first: with ten bands parked on fixed frequencies this
+                // reads like a graphic EQ, and gain is what actually gets
+                // dragged. Frequency is rarely touched (and can be moved on
+                // the curve with ⌥), so it sits last.
                 parameter("g", value: $band.gainDB, range: -24...24,
                           readout: gainLabel, readoutWidth: 34)
                 parameter("Q", value: logBinding($band.q, range: 0.1...10),
                           range: log10(0.1)...log10(10),
                           readout: String(format: "%.2f", band.q), readoutWidth: 30)
+                parameter("f", value: logBinding($band.frequency, range: 20...20_000),
+                          range: log10(20)...log10(20_000),
+                          readout: frequencyLabel, readoutWidth: 44)
             }
             .disabled(!band.isEnabled)
             .opacity(band.isEnabled ? 1 : 0.35)
