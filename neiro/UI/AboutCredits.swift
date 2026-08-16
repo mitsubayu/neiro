@@ -28,7 +28,9 @@ enum AboutCredits {
 
         let credits = NSMutableAttributedString()
         credits.append(NSAttributedString(
-            string: "Full-rate playback and parametric EQ for Apple Music.\n",
+            // Broken by hand so the tagline reads as two balanced lines
+            // instead of wherever the panel's width happens to wrap it.
+            string: "Full-rate playback and parametric EQ\nfor Apple Music.\n",
             attributes: body))
         credits.append(NSAttributedString(
             string: "Designed and built by \(authorName) with claude.\n",
