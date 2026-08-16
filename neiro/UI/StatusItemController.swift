@@ -9,6 +9,7 @@ import os
 @MainActor
 final class StatusItemController: NSObject {
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "ui")
+    static let panelWidth: CGFloat = 380
 
     private let appState: AppState
     private let statusItem: NSStatusItem
@@ -20,12 +21,18 @@ final class StatusItemController: NSObject {
     // LSUIElement, SwiftUI lifecycle), so the panel is hand-rolled: a
     // borderless key-capable panel positioned under the status item.
     private var panelIfCreated: NSPanel?
+    private var panelResizeObserver: NSObjectProtocol?
     private lazy var panel: NSPanel = {
         let host = NSHostingController(
             rootView: MenuBarRootView()
                 .environment(appState)
                 .background(Color(nsColor: .windowBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 12)))
+        // Deliberately NOT .preferredContentSize: letting SwiftUI resize this
+        // borderless panel recursed through Auto Layout until the stack blew
+        // (folding the Bands section did it reliably). The panel is sized once
+        // per open instead, and its content scrolls.
+        host.sizingOptions = []
         let panel = KeyablePanel(contentViewController: host)
         panel.styleMask = [.borderless, .nonactivatingPanel]
         panel.isOpaque = false
@@ -89,10 +96,20 @@ final class StatusItemController: NSObject {
 
     private func openPanel() {
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
-        panel.layoutIfNeeded()
         let buttonRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        let size = panel.frame.size
         let screen = buttonWindow.screen ?? NSScreen.main
+
+        // Sized here, once, so nothing can resize the window while it is open.
+        // A track on screen means the artwork is showing.
+        let wantsArtwork = appState.nowPlayingTitle?.isEmpty == false
+        var height: CGFloat = wantsArtwork ? 760 : 400
+        if let visible = screen?.visibleFrame {
+            height = min(height, visible.height - 24)
+        }
+        panel.setContentSize(NSSize(width: Self.panelWidth, height: height))
+        panel.layoutIfNeeded()
+
+        let size = panel.frame.size
         var x = buttonRect.midX - size.width / 2
         if let visible = screen?.visibleFrame {
             x = min(max(x, visible.minX + 8), visible.maxX - size.width - 8)

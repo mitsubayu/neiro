@@ -10,7 +10,18 @@ struct MenuBarRootView: View {
 
     var body: some View {
         @Bindable var appState = appState
-        VStack(alignment: .leading, spacing: 12) {
+        // The window is a fixed size while open, so anything that grows —
+        // notably the Bands section — scrolls rather than resizing the panel.
+        ScrollView {
+            content
+        }
+        .frame(width: StatusItemController.panelWidth)
+        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private var content: some View {
+        @Bindable var appState = appState
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Toggle(isOn: $appState.settings.isEnabled) {
                     Text("neiro").font(.headline)
@@ -79,13 +90,16 @@ struct MenuBarRootView: View {
                 .font(.caption)
             }
 
-            OutputDevicePicker()
-
-            Toggle(isOn: $appState.settings.followTrackRate) {
-                Text("Follow track sample rate (bit-perfect)")
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 6) {
+                OutputDevicePicker()
+                Toggle(isOn: $appState.settings.followTrackRate) {
+                    Text("Follow track sample rate (bit-perfect)")
+                        .font(.caption)
+                }
+                .toggleStyle(.checkbox)
             }
-            .toggleStyle(.checkbox)
+
+            Divider()
 
             HStack {
                 Menu {
@@ -168,14 +182,11 @@ struct MenuBarRootView: View {
             Divider()
 
             DisclosureGroup(isExpanded: $bandsExpanded) {
-                ScrollView {
-                    VStack(spacing: 6) {
-                        ForEach($appState.settings.bands) { $band in
-                            EQBandRow(band: $band)
-                        }
+                VStack(spacing: 6) {
+                    ForEach($appState.settings.bands) { $band in
+                        EQBandRow(band: $band)
                     }
                 }
-                .frame(maxHeight: 200)
             } label: {
                 Text("Bands (freq / gain / Q)")
                     .font(.caption)
@@ -188,7 +199,7 @@ struct MenuBarRootView: View {
 
             Divider()
 
-            HStack {
+            HStack(spacing: 8) {
                 Button("Reset EQ") {
                     for index in appState.settings.bands.indices {
                         appState.settings.bands[index].gainDB = 0
@@ -196,15 +207,22 @@ struct MenuBarRootView: View {
                     appState.settings.preGainDB = 0
                 }
                 Spacer()
-                Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
-                    .toggleStyle(.checkbox)
-                Spacer()
+                // Set-and-forget preferences live behind the gear so the
+                // footer stays about the two things you actually press.
+                Menu {
+                    Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
                 Button("Quit neiro") { NSApplication.shared.terminate(nil) }
             }
             .font(.caption)
         }
         .padding(14)
-        .frame(width: 380)
+        .frame(width: StatusItemController.panelWidth)
     }
 
     private var statusText: String {

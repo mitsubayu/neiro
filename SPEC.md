@@ -183,6 +183,10 @@ Reset EQ・Launch at login・Quit
 ⚠ ポップオーバー内容が最大高さを超えると可変サイズのビュー(ジャケ写)が圧縮される —
 固定 frame + 折りたたみで回避。
 
+⚠ パネルは**開くときに一度だけサイズを決め、開いている間は変えない**(中身は ScrollView)。
+SwiftUI にウィンドウをリサイズさせる(`sizingOptions = .preferredContentSize`)と
+Auto Layout と再帰してスタックが溢れる。折りたたみ後の余白もこの方式で消える。
+
 ### 2.6 Now Playing
 
 - 曲名/アーティスト: `com.apple.Music.playerInfo` 分散通知(+ AppleScript フォールバック)。400ms デバウンス
