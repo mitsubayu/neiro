@@ -9,8 +9,10 @@ import Synchronization
 /// thread reads the most recent window whenever it wants to draw, so a slow or
 /// idle UI simply misses frames instead of stalling audio.
 final class SpectrumTap {
-    static let fftSize = 1024
-    private static let capacity = 4096      // power of two: masking replaces modulo
+    /// 4096 points keeps the low end readable: at 1024 the bins were 47 Hz
+    /// wide, so everything below ~120 Hz collapsed into a flat staircase.
+    static let fftSize = 4096
+    private static let capacity = 16384     // power of two: masking replaces modulo
 
     private let samples: UnsafeMutablePointer<Float>
     private let writeIndex = Atomic<Int>(0)
@@ -68,9 +70,11 @@ final class SpectrumAnalyzer {
     static let binCount = 96
     static let minFrequency = 20.0
     static let maxFrequency = 20_000.0
-    /// Displayed dynamic range; anything quieter reads as silence.
-    static let floorDB: Float = -78
-    static let ceilingDB: Float = -6
+    /// Displayed dynamic range; anything quieter reads as silence. The top is
+    /// per-bin, not full scale — music spreads its energy, so a ceiling at
+    /// 0 dBFS would leave the display permanently flat.
+    static let floorDB: Float = -75
+    static let ceilingDB: Float = -8
 
     private let size = SpectrumTap.fftSize
     private let log2n: vDSP_Length
@@ -148,14 +152,30 @@ final class SpectrumAnalyzer {
             let lowBin = min(max(Int((lower / binWidth).rounded()), 1), topBin)
             let highBin = min(max(Int((upper / binWidth).rounded()), lowBin), topBin)
 
-            var peak: Float = 0
-            for bin in lowBin...highBin { peak = max(peak, magnitudes[bin]) }
+            var peak: Float
+            if highBin > lowBin {
+                peak = 0
+                for bin in lowBin...highBin { peak = max(peak, magnitudes[bin]) }
+            } else {
+                // Narrower than one FFT bin (the low end): interpolate instead
+                // of repeating a bin, which drew a staircase.
+                peak = interpolatedMagnitude(atFrequency: center, binWidth: binWidth)
+            }
             let db = 20 * log10(max(peak, 1e-9))
             let normalized = min(max((db - Self.floorDB) / (Self.ceilingDB - Self.floorDB), 0), 1)
             let previous = levels[index]
             let coefficient: Float = normalized > previous ? 0.55 : 0.12
             levels[index] = previous + (normalized - previous) * coefficient
         }
+    }
+
+    private func interpolatedMagnitude(atFrequency frequency: Double, binWidth: Double) -> Float {
+        let position = frequency / binWidth
+        let low = Int(position)
+        guard low >= 1 else { return magnitudes[1] }
+        guard low + 1 < magnitudes.count else { return magnitudes[magnitudes.count - 1] }
+        let t = Float(position - Double(low))
+        return magnitudes[low] * (1 - t) + magnitudes[low + 1] * t
     }
 
     /// Fades the display toward silence when no audio is arriving.

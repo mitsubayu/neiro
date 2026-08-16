@@ -34,7 +34,8 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F17 | EQ の即時バイパス(A/B 比較) | 処理だけを素通し。タップは保ったままなので瞬時 |
 | F18 | 出力デバイスごとにプリセットを自動適用 | デバイス UID → プリセット名を保存し、出力切替時に適用 |
 | F19 | 想定外のタップ形式で雑音を出さない | float32 インターリーブド以外は起動を拒否(Music は素の音で鳴る) |
-| F20 | 検出が止まったら自己修復 | 曲開始から8秒検出なし → 検出プロセスを再起動(60秒に1回まで) |
+| F20 | 検出が止まったら自己修復 | 無検出の曲開始が2回続いたら検出プロセスを再起動(60秒に1回まで) |
+| F21 | 再生中の音をスペクトラム表示 | EQ カーブの背面に実時間 FFT を重ねる。パネルを閉じている間は解析も停止 |
 
 ### 1.2 非機能要件
 
@@ -84,6 +85,26 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
   切り替えは瞬時(有効トグルはタップごと破棄するため1〜2秒かかる)
 - タップ形式の検証: linear PCM / float / インターリーブド / 32bit 以外は起動を拒否。
   IO ブロックは float32 インターリーブド決め打ちのため、想定外の形式は雑音になる
+
+### 2.2.1 スペクトラム表示(SpectrumAnalyzer + SpectrumBackingView)
+
+- IO スレッド → 事前確保のリングバッファへモノラル合成でコピー(ロック・確保なし)。
+  パネルを閉じている間は `isActive` が false で**コピーすらしない**
+- UI 側は 30fps で 4096点 FFT(vDSP、Hann窓)。1024点では低域のビン幅が 47Hz あり、
+  120Hz 以下が階段状に潰れた
+- 表示ビンは対数96点。FFT ビンより狭い低域は**補間**、広い高域は**範囲内の最大**。
+  区切りは隣接ビンとの幾何中点(広く取ると純音のピークが低域側にずれる)
+- レンジは -75〜-8dB(フルスケールではなく**ビンあたり**の値。0dB 上限だと音楽では
+  ほぼ平坦にしか見えない)。立ち上がり速く・戻り遅い平滑化
+- 描画は **AppKit + レイヤー合成**。SwiftUI の observable 経由で毎フレーム更新すると
+  パネル全体が再評価されて 33% CPU。現在 0.4%(下表)
+
+| 実装 | CPU(パネル表示中) |
+|---|---|
+| observable state をパネル本体で読む | 32.7% |
+| 子ビューに分離 | 11.8% |
+| AppKit ビューの `draw(_:)` | 4.8% |
+| AppKit + シェイプレイヤーのマスク | **0.4%** |
 
 ### 2.3 レートフォロー(TrackRateDetector + AppState)
 
@@ -186,12 +207,14 @@ neiro/
   DSP/BiquadKernel.swift        RBJ 係数+TDF-II 状態+応答計算
   DSP/EQProcessor.swift         RT安全なカスケード適用、ロックフリー係数公開、ミュート
   DSP/EQPreset.swift            プリセットモデル・内蔵6種・PresetStore
+  DSP/SpectrumAnalyzer.swift    RT安全なリングバッファ + vDSP FFT + 対数ビン化
+  UI/SpectrumBackingView.swift  自前30fpsループでレイヤーマスクを更新する AppKit ビュー
   Persistence/SettingsStore.swift  UserDefaults JSON (eqSettings.v1)
   UI/StatusItemController.swift ステータスアイテム+マーキー+自前パネル
   UI/MenuBarRootView.swift      パネル本体
   UI/OutputDevicePicker.swift / EQBandRow.swift / ResponseCurveView.swift
   AppIcon.icns / IconGlyph.svg  アイコン(ユーザー作の筆記体 n SVG を白ティント+グラデ squircle)
-neiroTests/BiquadTests.swift    21件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス
+neiroTests/BiquadTests.swift    23件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス、FFT ピーク検出、リングバッファ
 ```
 
 ---
