@@ -222,7 +222,13 @@ neiroTests/BiquadTests.swift    23件: biquad 精度/安定性、パース(レ�
 
 ## 4. ビルド・開発
 
+**新しいチェックアウトでは最初に `scripts/bootstrap.sh`**(XcodeGen を入れて
+`neiro.xcodeproj` を生成)。`.xcodeproj` は `project.yml` からの生成物なので
+**リポジトリにコミットしない**(競合と実体の乖離を避けるため)。
+
 ```bash
+./scripts/bootstrap.sh                             # 初回・project.yml 変更時
+./scripts/ci.sh                                    # CI と同じ検査をローカルで
 xcodegen generate                                  # ソース追加時は必ず再実行
 xcodebuild -project neiro.xcodeproj -scheme neiro -configuration Release -derivedDataPath build build
 open build/Build/Products/Release/neiro.app
@@ -236,6 +242,18 @@ xcodebuild -project neiro.xcodeproj -scheme neiro -configuration Debug -derivedD
   Music の制御(`NSAppleEventsUsageDescription`)
 - ログ確認: `/usr/bin/log show --last 5m --info --predicate 'subsystem == "com.mitsuba.neiro"'`
   (`log` はフルパス必須 — ユーザーの zsh に同名関数がある)
+
+## 4.1 CI(Azure Pipelines / `azure-pipelines.yml`)
+
+- `main` への push と **PR** で起動。macOS ホストエージェント、30分タイムアウト
+- 手順: XcodeGen/xcbeautify 導入 → `xcodegen generate`(= project.yml の妥当性検査)
+  → Debug でテスト → **JUnit で結果を発行**(失敗したタスクを赤くする)
+  → Release ビルド → 未署名 .app を成果物として発行
+- 失敗時は `.xcresult` を成果物として上げるので、ログだけでは分からない詳細を追える
+- エージェントには署名証明書も TCC 許可もないため `CODE_SIGNING_ALLOWED=NO`。
+  **テストではアプリ本体を起動しない**(AppDelegate が XCTest 実行を検出して素通し)
+  ので、Core Audio・ログ監視・メニューバーに依存せず走る
+- `scripts/ci.sh` が同じ手順をローカルで再現する(緑ならパイプラインも緑)
 
 ## 5. 検証手順(主要シナリオ)
 

@@ -231,6 +231,19 @@ observable な配列を 30fps で更新すると、それを読む**ビューの
   (https://aka.ms/azpipelines-parallelism-request)
 - 「空のリポジトリ」でも README 初期コミットが入っていることがある → rebase してから push
 
+## 6.1 CI(macOS アプリ)の実務メモ
+- **アプリにホストされるユニットテストはアプリを起動する**。メニューバー常駐アプリだと
+  Core Audio・ログ監視・ステータスアイテムまで動き出し、権限も window server もない
+  CI では不安定になる → `XCTestConfigurationFilePath` 環境変数で検出して**起動処理を素通し**する
+- XcodeGen 生成物の `.xcodeproj` は**コミットしない**。CI で毎回生成すれば
+  「project.yml が壊れていない」ことの検査も兼ねる
+- `xcodebuild | xcbeautify --report junit --report-path DIR` で JUnit が出るので
+  `PublishTestResults@2` に食わせると失敗したテストが UI で見える。
+  パイプ時は `set -o pipefail` を忘れない(xcodebuild の失敗が握り潰される)
+- 失敗時に `.xcresult` を成果物として上げておくと、ログに出ない詳細を後から追える
+- **CI と同じ手順を1本のスクリプト**(`scripts/ci.sh`)にして手元でも回せるようにする。
+  「ローカルで緑 = CI で緑」が保証でき、パイプライン YAML の試行錯誤を減らせる
+
 ## 7. プロセス面の教訓
 
 - **見た目に関わる変更はモックを先に見せて合意してから適用する**(アイコンで学んだ)

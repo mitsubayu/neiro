@@ -1,8 +1,17 @@
-# neiro CI — build & unit tests on a hosted macOS agent.
-# Signing is disabled on CI (no certificates on the runner); the Release
-# artifact is an unsigned .app for inspection, not for distribution.
+# neiro CI — build and unit tests on a hosted macOS agent.
+#
+# The agent has no signing certificates and no TCC grants, so signing is
+# disabled and the app never starts its audio engine during tests (see the
+# XCTest guard in AppDelegate). The Release artifact is an unsigned .app for
+# inspection, not for distribution.
 
 trigger:
+  branches:
+    include:
+      - main
+
+# Validate branches before they reach main.
+pr:
   branches:
     include:
       - main
@@ -10,45 +19,79 @@ trigger:
 pool:
   vmImage: macOS-latest
 
-steps:
-  - script: |
-      sw_vers
-      xcodebuild -version
-    displayName: Toolchain info
+jobs:
+  - job: build_and_test
+    displayName: Build & test
+    timeoutInMinutes: 30
+    steps:
+      - script: |
+          sw_vers
+          xcodebuild -version
+          xcodegen --version || true
+        displayName: Toolchain info
 
-  - script: brew install xcodegen
-    displayName: Install XcodeGen
+      - script: |
+          set -euo pipefail
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          brew list xcbeautify >/dev/null 2>&1 || brew install xcbeautify
+        displayName: Install tools
 
-  - script: xcodegen generate
-    displayName: Generate Xcode project
+      # The .xcodeproj is generated, never committed, so this is also a check
+      # that project.yml is valid.
+      - script: xcodegen generate
+        displayName: Generate Xcode project
 
-  - script: >
-      xcodebuild
-      -project neiro.xcodeproj
-      -scheme neiro
-      -configuration Debug
-      -derivedDataPath build
-      CODE_SIGNING_ALLOWED=NO
-      test
-    displayName: Unit tests (Debug)
+      - script: |
+          set -euo pipefail
+          mkdir -p build/reports
+          xcodebuild \
+            -project neiro.xcodeproj \
+            -scheme neiro \
+            -configuration Debug \
+            -derivedDataPath build \
+            -resultBundlePath build/reports/tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            test \
+            | xcbeautify --report junit --report-path build/reports
+        displayName: Unit tests
 
-  - script: >
-      xcodebuild
-      -project neiro.xcodeproj
-      -scheme neiro
-      -configuration Release
-      -derivedDataPath build
-      CODE_SIGNING_ALLOWED=NO
-      build
-    displayName: Build (Release, unsigned)
+      - task: PublishTestResults@2
+        displayName: Publish test results
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: build/reports/junit.xml
+          failTaskOnFailedTests: true
+          testRunTitle: neiro unit tests
 
-  - script: |
-      cd build/Build/Products/Release
-      zip -r $(Build.ArtifactStagingDirectory)/neiro-unsigned.zip neiro.app
-    displayName: Zip Release app
+      # The result bundle carries the failure details worth digging into.
+      - task: PublishBuildArtifacts@1
+        displayName: Publish test result bundle (on failure)
+        condition: failed()
+        inputs:
+          PathtoPublish: build/reports/tests.xcresult
+          ArtifactName: test-results
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)
-      ArtifactName: neiro-app
-    displayName: Publish artifact
+      - script: |
+          set -euo pipefail
+          xcodebuild \
+            -project neiro.xcodeproj \
+            -scheme neiro \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build \
+            | xcbeautify
+        displayName: Release build
+
+      - script: |
+          set -euo pipefail
+          cd build/Build/Products/Release
+          zip -qr "$(Build.ArtifactStagingDirectory)/neiro-unsigned.zip" neiro.app
+        displayName: Package app
+
+      - task: PublishBuildArtifacts@1
+        displayName: Publish app
+        inputs:
+          PathtoPublish: $(Build.ArtifactStagingDirectory)
+          ArtifactName: neiro-app

@@ -3,3 +3,6 @@ xcuserdata/
 build/
 DerivedData/
 *.xcuserstate
+
+# Generated from project.yml by XcodeGen — run scripts/bootstrap.sh
+neiro.xcodeproj/

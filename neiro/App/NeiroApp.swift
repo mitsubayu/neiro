@@ -18,6 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Unit tests are hosted by this app. Starting the engine there would
+        // touch Core Audio, spawn a log stream and put an item in the menu
+        // bar — none of which a test (or a CI agent without a window server)
+        // should depend on.
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
         let state = AppState()
         appState = state
         statusItemController = StatusItemController(appState: state)
