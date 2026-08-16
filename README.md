@@ -15,6 +15,11 @@ The rate change happens at the start of a track — a short silence, then the
 track plays from its beginning at the right rate. Mid-track it never
 interrupts: a change needed by the next song waits for the track boundary.
 
+> Development happens in a private Azure DevOps repository; this GitHub
+> repository is a published mirror, updated when there is something worth
+> publishing. Issues and discussion here are read — pull requests are applied
+> by hand upstream, so please open an issue first for anything substantial.
+
 ## Features
 
 - Follows the source rate per track (44.1 / 48 / 96 kHz and beyond)
