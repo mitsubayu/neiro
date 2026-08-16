@@ -13,8 +13,12 @@ struct MenuBarRootView: View {
     static let controlsWidth: CGFloat = 400
     // Wide enough for three sliders each followed by its own readout.
     static let bandsWidth: CGFloat = 400
-    static let panelWidth: CGFloat = artworkSize + controlsWidth + bandsWidth + 14 * 4
     static let panelHeight: CGFloat = artworkSize + 14 * 2
+
+    static func panelWidth(bandsVisible: Bool) -> CGFloat {
+        let columns = artworkSize + controlsWidth + (bandsVisible ? bandsWidth + 14 : 0)
+        return columns + 14 * 3
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -22,11 +26,14 @@ struct MenuBarRootView: View {
                 .frame(width: Self.artworkSize, height: Self.artworkSize)
             controls
                 .frame(width: Self.controlsWidth)
-            bands
-                .frame(width: Self.bandsWidth)
+            if appState.settings.bandsVisible {
+                bands
+                    .frame(width: Self.bandsWidth)
+            }
         }
         .padding(14)
-        .frame(width: Self.panelWidth, height: Self.panelHeight)
+        .frame(width: Self.panelWidth(bandsVisible: appState.settings.bandsVisible),
+               height: Self.panelHeight)
     }
 
     // MARK: - Middle column
@@ -38,6 +45,9 @@ struct MenuBarRootView: View {
                 Text("neiro").font(.headline)
                 Spacer()
                 statusAccessory
+                if !appState.settings.bandsVisible {
+                    PinButton()
+                }
             }
 
             HStack(spacing: 8) {
@@ -69,6 +79,12 @@ struct MenuBarRootView: View {
                 .help("Reset the EQ to flat")
                 Spacer()
                 HistoryButtons()
+                Toggle(isOn: $appState.settings.bandsVisible) {
+                    Image(systemName: appState.settings.bandsVisible
+                          ? "sidebar.trailing" : "sidebar.leading")
+                }
+                .toggleStyle(.button)
+                .help(appState.settings.bandsVisible ? "Hide the band list" : "Show the band list")
             }
 
             ResponseCurveView(bands: $appState.settings.bands,
@@ -90,6 +106,10 @@ struct MenuBarRootView: View {
                     .font(.caption.monospacedDigit())
                     .frame(width: 32, alignment: .trailing)
                 Text("dB").font(.caption2).foregroundStyle(.secondary)
+            }
+
+            if !appState.settings.bandsVisible {
+                ChromeFooter()
             }
         }
     }
@@ -183,23 +203,34 @@ struct MenuBarRootView: View {
 
             Spacer(minLength: 6)
 
-            HStack(spacing: 6) {
-                Spacer()
-                Menu {
-                    Toggle("Enable neiro", isOn: $appState.settings.isEnabled)
-                    Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
-                    Divider()
-                    AboutButton()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                Button("Quit") { NSApplication.shared.terminate(nil) }
-            }
-            .font(.caption)
+            ChromeFooter()
         }
+    }
+}
+
+/// Settings menu and Quit, right-aligned. Lives in whichever column is last.
+private struct ChromeFooter: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        @Bindable var appState = appState
+        HStack(spacing: 6) {
+            Spacer()
+            Menu {
+                Toggle("Enable neiro", isOn: $appState.settings.isEnabled)
+                Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
+                Divider()
+                HelpButton()
+                AboutButton()
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            Button("Quit") { NSApplication.shared.terminate(nil) }
+        }
+        .font(.caption)
     }
 }
 
@@ -232,22 +263,21 @@ private struct HistoryButtons: View {
 private struct AboutButton: View {
     @Environment(AppState.self) private var appState
 
-    private static let blurb = "Full-rate playback and parametric EQ for Apple Music.\n\n"
-        + "Captures Music.app with a Core Audio process tap, follows each track's "
-        + "own sample rate, and plays it back through the output device you choose.\n\n"
-        + "Designed and built by mitsubayu with claude."
-
     var body: some View {
         Button("About neiro") {
             appState.closePanel()
             NSApp.activate(ignoringOtherApps: true)
-            NSApp.orderFrontStandardAboutPanel(options: [
-                .credits: NSAttributedString(string: Self.blurb, attributes: [
-                    .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
-                    .foregroundColor: NSColor.secondaryLabelColor,
-                ]),
-            ])
+            NSApp.orderFrontStandardAboutPanel(options: [.credits: AboutCredits.attributedString()])
         }
+    }
+}
+
+private struct HelpButton: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        Button("neiro Help") { appState.showHelp() }
+            .keyboardShortcut("?", modifiers: .command)
     }
 }
 

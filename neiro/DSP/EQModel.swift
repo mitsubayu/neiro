@@ -28,6 +28,8 @@ struct EQSettings: Codable, Equatable {
     /// Keeps the panel open when you click elsewhere — handy while dragging
     /// EQ handles against another app's audio.
     var panelPinned = false
+    /// Lets the bands column fold away sideways on a small screen.
+    var bandsVisible = true
     /// Output device UID → preset name, auto-applied when that device becomes
     /// the output (headphone correction differs per device).
     var presetBindings: [String: String] = [:]
@@ -51,7 +53,7 @@ struct EQSettings: Codable, Equatable {
 extension EQSettings {
     private enum CodingKeys: String, CodingKey {
         case isEnabled, preGainDB, outputDeviceUID, followTrackRate, launchAtLogin
-        case isBypassed, presetBindings, panelPinned, bands
+        case isBypassed, presetBindings, panelPinned, bandsVisible, bands
     }
 
     init(from decoder: Decoder) throws {
@@ -63,6 +65,7 @@ extension EQSettings {
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
         isBypassed = try container.decodeIfPresent(Bool.self, forKey: .isBypassed) ?? false
         panelPinned = try container.decodeIfPresent(Bool.self, forKey: .panelPinned) ?? false
+        bandsVisible = try container.decodeIfPresent(Bool.self, forKey: .bandsVisible) ?? true
         presetBindings = try container.decodeIfPresent([String: String].self, forKey: .presetBindings) ?? [:]
         bands = try container.decodeIfPresent([EQBand].self, forKey: .bands) ?? EQSettings.makeDefault().bands
     }

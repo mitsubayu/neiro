@@ -1,6 +1,7 @@
 name: neiro
 options:
   bundleIdPrefix: com.mitsuba
+  developmentLanguage: en
   deploymentTarget:
     macOS: "15.0"
   createIntermediateGroups: true
@@ -25,7 +26,6 @@ targets:
         CFBundleIconFile: AppIcon
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHumanReadableCopyright: © 2026 mitsubayu
         LSUIElement: true
         NSAudioCaptureUsageDescription: neiro captures Music.app's audio output to apply the parametric EQ you configure.
         NSAppleEventsUsageDescription: neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.

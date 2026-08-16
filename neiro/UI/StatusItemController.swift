@@ -21,6 +21,7 @@ final class StatusItemController: NSObject {
     // borderless key-capable panel positioned under the status item.
     private var panelIfCreated: NSPanel?
     private var panelResizeObserver: NSObjectProtocol?
+    private var helpWindow: NSWindow?
     private lazy var panel: NSPanel = {
         let host = NSHostingController(
             rootView: MenuBarRootView()
@@ -68,6 +69,7 @@ final class StatusItemController: NSObject {
             ])
         }
         appState.closePanelHandler = { [weak self] in self?.closePanel() }
+        appState.showHelpHandler = { [weak self] in self?.showHelp() }
         observeState()
         refresh()
         Self.logger.error("status item init done, button=\(self.statusItem.button != nil)")
@@ -99,10 +101,10 @@ final class StatusItemController: NSObject {
         let buttonRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
         let screen = buttonWindow.screen ?? NSScreen.main
 
-        // Fixed size: the layout is wide rather than tall, so everything fits
-        // without the window ever resizing while it is open.
-        panel.setContentSize(NSSize(width: MenuBarRootView.panelWidth,
-                                    height: MenuBarRootView.panelHeight))
+        // Sized here (and only from an explicit event like folding the band
+        // column away) — never from SwiftUI, which recursed through Auto
+        // Layout when it drove the window size.
+        panel.setContentSize(currentPanelSize)
         panel.layoutIfNeeded()
 
         let size = panel.frame.size
@@ -113,6 +115,40 @@ final class StatusItemController: NSObject {
         panel.setFrameOrigin(NSPoint(x: x, y: buttonRect.minY - size.height - 6))
         panel.makeKeyAndOrderFront(nil)
         syncDismissMonitor()
+    }
+
+    /// A normal titled window, kept around so reopening help reuses it.
+    private func showHelp() {
+        if helpWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
+            window.title = String(localized: "neiro Help")
+            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            helpWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        helpWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    private var currentPanelSize: NSSize {
+        NSSize(width: MenuBarRootView.panelWidth(bandsVisible: appState.settings.bandsVisible),
+               height: MenuBarRootView.panelHeight)
+    }
+
+    /// Folding the band list changes the width; re-apply it and keep the
+    /// panel anchored under the menu bar icon.
+    private func resizePanelIfNeeded() {
+        guard let panel = panelIfCreated, panel.isVisible else { return }
+        let size = currentPanelSize
+        guard panel.frame.size != size else { return }
+        let top = panel.frame.maxY
+        panel.setContentSize(size)
+        var origin = NSPoint(x: panel.frame.minX, y: top - panel.frame.height)
+        if let visible = (panel.screen ?? NSScreen.main)?.visibleFrame {
+            origin.x = min(max(origin.x, visible.minX + 8), visible.maxX - panel.frame.width - 8)
+        }
+        panel.setFrameOrigin(origin)
     }
 
     private func closePanel() {
@@ -131,6 +167,7 @@ final class StatusItemController: NSObject {
             _ = appState.menuBarSuffix
             _ = appState.status
             _ = appState.settings.panelPinned
+            _ = appState.settings.bandsVisible
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -151,6 +188,7 @@ final class StatusItemController: NSObject {
         marqueeWidthConstraint?.constant = marqueeView.desiredWidth
         statusItem.length = marqueeView.desiredWidth + 12
         syncDismissMonitor()
+        resizePanelIfNeeded()
     }
 }
 

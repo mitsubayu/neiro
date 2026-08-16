@@ -28,7 +28,5 @@
 	<string>neiro briefly pauses and resumes Music.app so sample-rate switches happen without an audible glitch.</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>neiro captures Music.app's audio output to apply the parametric EQ you configure.</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>© 2026 mitsubayu</string>
 </dict>
 </plist>

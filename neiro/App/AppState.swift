@@ -15,10 +15,10 @@ final class AppState {
 
         var label: String {
             switch self {
-            case .disabled: "Off"
-            case .waitingForMusic: "Waiting for Music.app…"
-            case .running: "Running"
-            case .error(let message): "Error: \(message)"
+            case .disabled: String(localized: "Off")
+            case .waitingForMusic: String(localized: "Waiting for Music.app…")
+            case .running: String(localized: "Running")
+            case .error(let message): String(format: String(localized: "Error: %@"), message)
             }
         }
     }
@@ -117,6 +117,9 @@ final class AppState {
     @ObservationIgnored private var nowPlayingObserver: NSObjectProtocol?
     /// Set by StatusItemController so the UI can dismiss its own panel.
     @ObservationIgnored var closePanelHandler: (() -> Void)?
+    /// Set by StatusItemController: help lives in a real window, which only
+    /// AppKit can own.
+    @ObservationIgnored var showHelpHandler: (() -> Void)?
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
 
     init() {
@@ -682,6 +685,11 @@ final class AppState {
 
     func closePanel() {
         closePanelHandler?()
+    }
+
+    func showHelp() {
+        closePanel()
+        showHelpHandler?()
     }
 
     // MARK: - Undo / redo

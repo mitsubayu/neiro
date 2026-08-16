@@ -189,6 +189,19 @@ struct BiquadTests {
         #expect(!empty.withUnsafeMutableBufferPointer { idle.latestWindow(into: $0.baseAddress!) })
     }
 
+    @MainActor
+    @Test func aboutCreditsLinkTheAuthor() {
+        let credits = AboutCredits.attributedString()
+        let text = credits.string
+        #expect(text.contains("© 2026 \(AboutCredits.authorName)"))
+
+        var linkedRange = NSRange()
+        let link = credits.attribute(.link, at: credits.length - 1, effectiveRange: &linkedRange) as? URL
+        #expect(link == AboutCredits.authorURL)
+        // Only the name is clickable, not the whole blurb.
+        #expect((text as NSString).substring(with: linkedRange) == AboutCredits.authorName)
+    }
+
     // MARK: - Undo history
 
     private func snapshot(_ gain: Double, pre: Double = 0) -> EQSnapshot {

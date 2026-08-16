@@ -55,9 +55,9 @@ struct EQBandRow: View {
 
     private var typeLabel: String {
         switch band.type {
-        case .peak: "peak"
-        case .lowShelf: "low shelf"
-        case .highShelf: "high shelf"
+        case .peak: String(localized: "peak")
+        case .lowShelf: String(localized: "low shelf")
+        case .highShelf: String(localized: "high shelf")
         }
     }
 
