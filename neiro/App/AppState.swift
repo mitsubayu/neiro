@@ -103,6 +103,7 @@ final class AppState {
     @ObservationIgnored private var lastDetectionAt: Date?
     @ObservationIgnored private var pendingEvaluationSince: Date?
     @ObservationIgnored private var muteDeadlineTask: Task<Void, Never>?
+    @ObservationIgnored private var headMuteApplied = false
     @ObservationIgnored private var trackStartsSinceDetection = 0
     /// Ceiling on how long detections may keep pushing the evaluation back.
     private static let maxDebounceWait: TimeInterval = 2.5
@@ -263,12 +264,22 @@ final class AppState {
                 // If the listener picked a different track while we were
                 // rebuilding, seeking to 0:00 would yank playback away from
                 // their choice — only rewind the track we actually paused.
-                let currentTitle = MusicRemote.nowPlaying()?.title
-                let sameTrack = expectedTrackTitle == nil || currentTitle == expectedTrackTitle
-                if restartTrackFromHead, sameTrack {
+                // Music is busy loading right after the rebuild and often lets
+                // the query time out; a nil answer is "don't know", not "a
+                // different track", and treating it as a change silently
+                // dropped the intro we had just muted. Ask twice, and only a
+                // definite different title cancels the rewind.
+                var currentTitle = MusicRemote.nowPlaying()?.title
+                if currentTitle == nil {
+                    usleep(300_000)
+                    currentTitle = MusicRemote.nowPlaying()?.title
+                }
+                let changedTrack = expectedTrackTitle != nil && currentTitle != nil
+                    && currentTitle != expectedTrackTitle
+                if restartTrackFromHead, !changedTrack {
                     MusicRemote.setPosition(to: 0)
-                } else if !sameTrack {
-                    Self.logger.info("track changed during the switch — leaving playback position alone")
+                } else if changedTrack {
+                    Self.logger.info("track changed during the switch (\(currentTitle ?? "?", privacy: .public) ≠ \(expectedTrackTitle ?? "?", privacy: .public)) — leaving playback position alone")
                 }
                 // A resume that silently fails (osascript timing out while
                 // Music is busy loading) leaves playback stopped for good, so
@@ -424,6 +435,7 @@ final class AppState {
     /// Mutes for an upcoming switch with a hard deadline, so no failure path
     /// can leave the output silent.
     private func armHeadMute() {
+        headMuteApplied = true
         processor.setMuted(true)
         guard muteDeadlineTask == nil else { return }
         muteDeadlineTask = Task { @MainActor [weak self] in
@@ -461,9 +473,24 @@ final class AppState {
         Self.logger.info("evaluate: track=\(self.lastTrackRate ?? 0) engine=\(self.engineSampleRate) → \(String(describing: decision), privacy: .public)")
         switch decision {
         case .idle:
-            // No switch needed after all (e.g. rate flapped back) — make sure
-            // a head-mute from a premature detection doesn't stick.
+            // The policy reports idle as soon as the rates match, which also
+            // happens in the tail of a *successful* switch while its resume is
+            // still seeking and playing. That switch owns the mute, the
+            // watchdog and the rewind — stepping in here would seek a second
+            // time and the intro would be heard twice.
+            guard !isSwitchingRate else {
+                engineBuiltWithoutTrackRate = false
+                return
+            }
+            // Otherwise no switch was needed after all (e.g. the rate flapped
+            // back). If we had already muted the intro for a switch that never
+            // came, the listener lost those seconds — play them back.
+            let recoverIntro = headMuteApplied && isAtKnownTrackHead
             endSwitching()
+            if recoverIntro {
+                Self.logger.info("head was muted but no switch followed — restarting the track")
+                Task.detached { MusicRemote.setPosition(to: 0) }
+            }
             // The engine's rate is confirmed against a real detection now, so
             // it no longer counts as built blind.
             engineBuiltWithoutTrackRate = false
@@ -553,6 +580,7 @@ final class AppState {
     private func endSwitching() {
         muteDeadlineTask?.cancel()
         muteDeadlineTask = nil
+        headMuteApplied = false
         processor.setMuted(false)
         isSwitchingRate = false
         switchTargetRate = nil

@@ -163,8 +163,16 @@ final class TrackRateDetector {
     /// Parses decoder lines like `Output format:  2 ch,  96000 Hz, lpcm
     /// (0x0000000C) 24-bit little-endian signed integer`. Returns nil for
     /// non-output lines; bitDepth is nil for float formats.
+    ///
+    /// Only lines from a named source decoder count. The generic
+    /// `ACCPEDecoderWrapper` also logs an output format, but it reports the
+    /// *device* rate as well as the source rate — those stray 48 kHz lines
+    /// arrived last, won the debounce, and made every track look like it
+    /// needed no rate change (while the head had already been muted for a
+    /// switch that never came, losing the intro).
     static func parseOutputFormat(fromEventMessage message: String) -> (sampleRate: Double, bitDepth: Int?)? {
-        guard message.contains("Output format:") else { return nil }
+        guard message.contains("Output format:"),
+              parseDecoderCodec(fromEventMessage: message) != nil else { return nil }
         guard let rateRange = message.range(of: #"(\d+) Hz"#, options: .regularExpression),
               let rate = Double(message[rateRange].dropLast(" Hz".count)),
               rate >= 8000, rate <= 768_000 else { return nil }
