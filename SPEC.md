@@ -97,6 +97,7 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 | 曲頭が確定(playerInfo) | `switchRestartingTrack` | 一時停止 → 再構築 → 0:00 → 再開 |
 | 判断材料不足 | `queryPlayer` | Music に状態/位置を問い合わせて再判断 |
 | 再生位置 >5s(次曲の先読み) | `deferToTrackBoundary` | 2s 後に再評価。現在の曲は無傷 |
+
 - 曲頭の判定: `playerInfo` 通知(タイトル変化 or 停止→Playing 遷移)の時刻を記録し、
   6秒以内なら「曲頭で再生中」と**AppleScript なしで**確定できる(`isAtKnownTrackHead`)
 - 切替シーケンス(F4/F5):
