@@ -276,7 +276,7 @@ private struct HelpButton: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        Button("neiro Help") { appState.showHelp() }
+        Button("Help neiro") { appState.showHelp() }
             .keyboardShortcut("?", modifiers: .command)
     }
 }

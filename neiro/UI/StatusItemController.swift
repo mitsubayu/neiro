@@ -121,7 +121,7 @@ final class StatusItemController: NSObject {
     private func showHelp() {
         if helpWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
-            window.title = String(localized: "neiro Help")
+            window.title = String(localized: "neiro Help", table: "Help")
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
             window.center()
