@@ -313,9 +313,14 @@ private struct NowPlayingArtwork: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } else {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
+                    // Nothing playing: the app's own icon reads as "this is
+                    // neiro, waiting" rather than as a track that failed to
+                    // load its cover.
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: MenuBarRootView.artworkSize * 0.42)
+                        .opacity(0.9)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.quaternary.opacity(0.5))
                 }

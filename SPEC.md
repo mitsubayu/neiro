@@ -117,9 +117,14 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 - 検出: `/usr/bin/log stream` を子プロセスで起動し Music のログを監視
   - `Creating AudioQueue with format:'qlac', … sampleRate:96000` → ソースレート+コーデック fourcc。
     **キューを作り直すときしか出ない**(同一フォーマットの曲変更では出ない)
-  - デコーダ `Output format: … 24-bit …integer` / `… Int16` / float → ビット深度(float は nil)。
-    **毎回出る**ので、行頭のデコーダ名(`ACAppleLosslessDecoder`→ALAC、`ACMP4AACBaseDecoder`→AAC)
-    からコーデックも判定する。総称ラッパ `ACCPEDecoderWrapper` は形式を名乗らないため無視
+  - デコーダ `Output format: … 24-bit …integer` / `… Int16` / float → レートとビット深度(float は nil)。
+    **毎回出る**ので、行頭のデコーダ名(`ACAppleLosslessDecoder`→ALAC、`ACMP4AACBaseDecoder`→AAC、
+    `ACMP3Decoder`→MP3)からコーデックも判定する
+  - **レートを採るのはデコーダ名が入っている行だけ**。総称ラッパ `ACCPEDecoderWrapper` も
+    同じ行を出すが、ソースレートに加えて**出力デバイスのレート**も報告するため、拾うと
+    デバウンスの最後に居座って「差なし=切替不要」と誤判断され、全曲がデバイスレートに固着する
+  - デコーダ名のホワイトリストは単一障害点なので、**未知のデコーダが出した行はログに残す**
+    (`output format from an unknown decoder`)。Apple がクラス名を変えたときの唯一の手掛かり
   - コーデック表示名: `*lac`→ALAC, `*aac*`→AAC, ほか fourcc 大文字
 - 復元: `log stream` は**起動後の行しか見えない**ため、起動/有効化時に一度だけ
   `log show --last 120s` で直近のレート・コーデック・ビット深度を復元する
@@ -132,7 +137,7 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 
 | 状況 | 判断 | 動作 |
 |---|---|---|
-| レート一致 / 無効 / エンジン停止 | `idle` | ミュート解除のみ |
+| レート一致 / 無効 / エンジン停止 | `idle` | ミュート解除。曲頭をミュート済みなのに切替が起きなかった場合は 0:00 へ戻して頭を復元 |
 | 切替実行中 | `waitForInFlightSwitch` | 完了後に再評価 |
 | レート未知のまま組んだエンジン(起動直後) | `switchKeepingPosition` | 再構築のみ。**曲は止めない** |
 | 曲頭が確定(playerInfo) | `switchRestartingTrack` | 一時停止 → 再構築 → 0:00 → 再開 |
@@ -150,6 +155,11 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
   - 再生中でない場合は transport 操作なしの「静かな切替」に降格
   - 位置 >5s は次曲の先読みとみなし保留(2s 後に再評価)
   - 実測: 検出 → ミュート 0秒、検出 → 新レートで再生開始まで約2.4秒
+  - `idle` は**切替成功の直後にも返る**(エンジンは新レートで組み上がっており、resume だけが
+    残っている)。in-flight 中は idle 側の後始末をしない — さもないと seek が二重になり曲頭が2回鳴る
+  - 巻き戻し前の「まだ同じ曲か」確認で Music が答えない(読み込み中の osascript タイムアウト)のは
+    **「別の曲」ではなく「不明」**として扱う。別曲と誤認すると巻き戻しを取りやめ、
+    ミュートした曲頭がそのまま失われる
 
 **教訓**: AppleScript は相手アプリを自動起動する(Music 終了後の呼び出しで復活してしまう)
 → Music 起動チェックを共通入口に。未応答の Automation 許可ダイアログで osascript が永久ブロック
@@ -217,7 +227,9 @@ Auto Layout と再帰してスタックが溢れる。折りたたみ後の余�
 project.yml                     XcodeGen 定義(Info.plist キー・署名・sandbox無効)
 neiro/
   App/NeiroApp.swift            @main(Settings 空シーン)+ AppDelegate(AppState/StatusItemController 生成、終了時 teardown)
-  App/AppState.swift            @MainActor @Observable 中枢: 設定・エンジン制御・レートフォロー判断・Now Playing・プリセット・ログイン項目
+  App/AppState.swift            @MainActor @Observable 中枢: 設定・エンジン制御・Now Playing・プリセット・Undo・ログイン項目
+  App/AppState+RateFollowing.swift  レートフォロー一式(検出の受け口・デバウンス・曲頭ミュート・切替実行)。
+                                状態は AppState 側に置き、この2ファイル間でのみ共有(internal)
   Audio/CoreAudioUtils.swift    AudioObject プロパティ/リスナーのラッパ、集約デバイス UID 定数
   Audio/MusicProcessLocator.swift  Music の audio process object 解決
   Audio/OutputDeviceMonitor.swift  出力デバイス列挙・ホットプラグ監視(自前集約は除外)
@@ -240,8 +252,16 @@ neiro/
   UI/OutputDevicePicker.swift / EQBandRow.swift / ResponseCurveView.swift
   Resources/{en,ja}.lproj/Help.strings  ヘルプ専用の文字列テーブル
   AppIcon.icns / IconGlyph.svg  アイコン(ユーザー作の筆記体 n SVG を白ティント+グラデ squircle)
-neiroTests/BiquadTests.swift    28件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス、
-                                FFT ピーク検出、リングバッファ、Undo 履歴、About のリンク、デコーダ名からのコーデック判定
+neiroTests/                     29件 / 9 スイート。ソースツリーと同じ構成:
+  DSP/BiquadTests.swift           係数の精度・安定性・Nyquist クランプ
+  DSP/EQProcessorTests.swift      プリゲイン、バイパスがサンプルを一切触らないこと
+  DSP/EQHistoryTests.swift        Undo/Redo・redo 分岐の破棄・上限
+  DSP/SpectrumTests.swift         FFT ピーク検出、リングバッファの巻き戻り
+  Audio/TrackRateDetectorTests.swift  実ログ文字列のパース(レート/コーデック/Output format/未知デコーダ)
+  Audio/RateSwitchPolicyTests.swift   切替判断の全分岐
+  Audio/ProcessTapEngineTests.swift   タップ形式の検証
+  Persistence/SettingsTests.swift     設定の後方互換、内蔵プリセット
+  UI/MenuBarTests.swift               マーキー幅ルール、About のリンク
 ```
 
 ---
@@ -285,13 +305,15 @@ xcodebuild -project neiro.xcodeproj -scheme neiro -configuration Debug -derivedD
 
 1. 再生開始 → ステータス `Running · <codec> <rate>/<bit>`、二重再生なし
 2. 44.1k ⇄ 96k の曲を跨ぐ → 曲頭で短い無音の後、頭から正しいレートで1回だけ再生。
-   DAC のレート実測(Audio MIDI 設定)も追従
+   DAC のレート実測(Audio MIDI 設定 / `system_profiler SPAudioDataType`)も追従。
+   **同一アルバム内はレートが同じ**なのでアルバムを跨いで送ること。
+   実測レート表と手順は `docs/debugging-rates.md`、実行中の観測は `scripts/watch-rates.sh`
 3. 同レートの曲の連続 → 無音・途切れなし
 4. EQ ハンドルをドラッグ → 音が即応、ノイズなし。プリセット適用/保存/上書き
 5. Music を終了 → neiro は待機表示・表示クリア・Music は再起動しない。再度開くと自動復帰
 6. デバイス抜去 → デフォルト出力へフォールバック
 7. neiro 終了 → Music のミュートが解除されている
-8. `xcodebuild test` 12件グリーン
+8. `scripts/ci.sh`(生成 → ビルド → テスト29件)がグリーン
 
 ## 6. 今後の候補
 
