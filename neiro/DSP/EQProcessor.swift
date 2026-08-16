@@ -24,6 +24,7 @@ final class EQProcessor {
     private let states: UnsafeMutablePointer<BiquadState>
     private let activeBank = Atomic<Int>(0)
     private let mutedFlag = Atomic<Bool>(false)
+    private let bypassFlag = Atomic<Bool>(false)
 
     // Serializes writers (main thread UI updates vs. control-queue sample-rate
     // changes). Never touched by the realtime thread.
@@ -50,6 +51,7 @@ final class EQProcessor {
         writerLock.lock()
         defer { writerLock.unlock() }
         self.settings = settings
+        bypassFlag.store(settings.isBypassed, ordering: .relaxed)
         publishLocked()
     }
 
@@ -87,6 +89,9 @@ final class EQProcessor {
             }
             return
         }
+        // Bypass leaves the samples exactly as the tap delivered them, so an
+        // A/B comparison changes nothing but the processing.
+        if bypassFlag.load(ordering: .relaxed) { return }
         let bank = activeBank.load(ordering: .acquiring)
         let header = headers[bank]
         let bankCoefficients = coefficients + bank * maxBands

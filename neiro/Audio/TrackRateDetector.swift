@@ -78,6 +78,13 @@ final class TrackRateDetector {
         }
     }
 
+    /// Tear down and start over — used when a track demonstrably started but
+    /// no line ever arrived, which means the stream is alive but useless.
+    func restart() {
+        stop()
+        start()
+    }
+
     func stop() {
         queue.async { [weak self] in
             self?.process?.terminationHandler = nil

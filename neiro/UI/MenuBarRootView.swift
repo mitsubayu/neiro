@@ -95,6 +95,17 @@ struct MenuBarRootView: View {
                         }
                     }
                     Divider()
+                    if let device = appState.currentOutputDeviceName {
+                        if appState.boundPresetNameForCurrentDevice != nil {
+                            Button("Stop auto-applying on \(device)") {
+                                appState.clearPresetBindingForCurrentDevice()
+                            }
+                        }
+                        Button("Auto-apply this preset on \(device)") {
+                            appState.bindActivePresetToCurrentDevice()
+                        }
+                        .disabled(appState.activePresetName == nil)
+                    }
                     Button("Save Current as Preset…") {
                         presetName = ""
                         isNamingPreset = true
@@ -106,6 +117,11 @@ struct MenuBarRootView: View {
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 Spacer()
+                Toggle(isOn: $appState.settings.isBypassed) {
+                    Text("Bypass").font(.caption)
+                }
+                .toggleStyle(.button)
+                .help("Pass audio through untouched for an instant A/B")
             }
             .alert("Save Preset", isPresented: $isNamingPreset) {
                 TextField("Preset name", text: $presetName)
@@ -119,6 +135,14 @@ struct MenuBarRootView: View {
                               preGainDB: appState.settings.preGainDB,
                               sampleRate: appState.engineSampleRate)
                 .frame(height: 150)
+                .opacity(appState.settings.isBypassed ? 0.35 : 1)
+                .overlay {
+                    if appState.settings.isBypassed {
+                        Text("BYPASSED")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
             HStack {
                 Text("Pre-gain").font(.caption)

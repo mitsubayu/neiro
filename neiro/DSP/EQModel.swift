@@ -21,6 +21,13 @@ struct EQSettings: Codable, Equatable {
     var outputDeviceUID: String?
     var followTrackRate = true
     var launchAtLogin = true
+    /// Skips all processing while true — an instant A/B against the same
+    /// signal path (the enable toggle tears the tap down instead, which takes
+    /// a second and changes the routing).
+    var isBypassed = false
+    /// Output device UID → preset name, auto-applied when that device becomes
+    /// the output (headphone correction differs per device).
+    var presetBindings: [String: String] = [:]
     var bands: [EQBand]
 
     static let maxBands = 16
@@ -40,7 +47,8 @@ struct EQSettings: Codable, Equatable {
 // still load instead of falling back to defaults.
 extension EQSettings {
     private enum CodingKeys: String, CodingKey {
-        case isEnabled, preGainDB, outputDeviceUID, followTrackRate, launchAtLogin, bands
+        case isEnabled, preGainDB, outputDeviceUID, followTrackRate, launchAtLogin
+        case isBypassed, presetBindings, bands
     }
 
     init(from decoder: Decoder) throws {
@@ -50,6 +58,8 @@ extension EQSettings {
         outputDeviceUID = try container.decodeIfPresent(String.self, forKey: .outputDeviceUID)
         followTrackRate = try container.decodeIfPresent(Bool.self, forKey: .followTrackRate) ?? true
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
+        isBypassed = try container.decodeIfPresent(Bool.self, forKey: .isBypassed) ?? false
+        presetBindings = try container.decodeIfPresent([String: String].self, forKey: .presetBindings) ?? [:]
         bands = try container.decodeIfPresent([EQBand].self, forKey: .bands) ?? EQSettings.makeDefault().bands
     }
 }

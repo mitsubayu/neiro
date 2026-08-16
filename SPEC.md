@@ -31,6 +31,10 @@ Apple Music (Music.app) の音声をフルレート(ビット・パーフェク�
 | F14 | 設定の永続化 | UserDefaults に JSON(後方互換デコード) |
 | F15 | 再生中に起動/有効化しても、その曲のレートに追従する | 起動時に `log show` で直近のフォーマットを復元(ストリームは過去を見ないため) |
 | F16 | レート切替中であることが分かる | メニューバー `→ 44.1kHz` / パネル `Switching to 44.1kHz…`(橙) |
+| F17 | EQ の即時バイパス(A/B 比較) | 処理だけを素通し。タップは保ったままなので瞬時 |
+| F18 | 出力デバイスごとにプリセットを自動適用 | デバイス UID → プリセット名を保存し、出力切替時に適用 |
+| F19 | 想定外のタップ形式で雑音を出さない | float32 インターリーブド以外は起動を拒否(Music は素の音で鳴る) |
+| F20 | 検出が止まったら自己修復 | 曲開始から8秒検出なし → 検出プロセスを再起動(60秒に1回まで) |
 
 ### 1.2 非機能要件
 
@@ -76,6 +80,10 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 - `EQProcessor`: ダブルバンク係数+アトミックなバンク切替でロックフリー公開。プリゲイン、
   レート切替時の曲頭ミュート用フラグ(atomic)。書き込み側は NSLock で直列化
 - 既定バンド: 31.5(LS), 63〜8k(peak), 16k(HS)
+- バイパス: `bypassFlag`(atomic)を見て**1サンプルも触らず**即 return。タップは保つので
+  切り替えは瞬時(有効トグルはタップごと破棄するため1〜2秒かかる)
+- タップ形式の検証: linear PCM / float / インターリーブド / 32bit 以外は起動を拒否。
+  IO ブロックは float32 インターリーブド決め打ちのため、想定外の形式は雑音になる
 
 ### 2.3 レートフォロー(TrackRateDetector + AppState)
 
@@ -85,6 +93,8 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
   - コーデック表示名: `*lac`→ALAC, `*aac*`→AAC, ほか fourcc 大文字
 - 復元: `log stream` は**起動後の行しか見えない**ため、起動/有効化時に一度だけ
   `log show --last 120s` で直近のレート・コーデック・ビット深度を復元する
+- 健全性: 曲が始まった(playerInfo)のに8秒たっても検出が来なければストリームが死んでいると判断し、
+  検出プロセスを再起動(復元も走るので現在の曲のレートも即座に戻る)。連発防止に60秒のクールダウン
 - 判断: 検出は 1.2s デバウンス(Music は曲境界で複数レートのキューを作るため)。
   判断そのものは純粋関数 `RateSwitchPolicy`(下表)に切り出してテストで固定。
   実行中フラグには 20s ウォッチドッグ(完了時にキャンセル)
@@ -142,7 +152,8 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 
 上から: 有効トグル+ステータス(`Running · ALAC 44.1kHz/16bit`)/ ジャケ写(352pt 固定・
 非圧縮、下部グラデに曲名・アーティスト重ね)/ 出力ピッカー / レートフォロートグル /
-プリセットメニュー(適用中は名前を太字表示)/ 応答カーブ(高さ150、ハンドルドラッグ編集)/
+プリセットメニュー(適用中は名前を太字表示、デバイスへの自動適用の紐づけ)+ Bypass ボタン /
+応答カーブ(高さ150、ハンドルドラッグ編集、周波数・dB 目盛り、バイパス時は減光+"BYPASSED")/
 プリゲイン / バンド一覧(行全体クリックで開閉する DisclosureGroup、既定閉)/
 Reset EQ・Launch at login・Quit
 
@@ -180,7 +191,7 @@ neiro/
   UI/MenuBarRootView.swift      パネル本体
   UI/OutputDevicePicker.swift / EQBandRow.swift / ResponseCurveView.swift
   AppIcon.icns / IconGlyph.svg  アイコン(ユーザー作の筆記体 n SVG を白ティント+グラデ squircle)
-neiroTests/BiquadTests.swift    18件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー
+neiroTests/BiquadTests.swift    21件: biquad 精度/安定性、パース(レート・コーデック・Output format)、設定互換、マーキー幅ルール、プリセット、切替ポリシー、タップ形式検証、バイパス
 ```
 
 ---

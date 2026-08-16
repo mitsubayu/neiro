@@ -1,3 +1,4 @@
+import CoreAudio
 import Testing
 @testable import neiro
 import Foundation
@@ -111,6 +112,67 @@ struct BiquadTests {
         #expect(noTitle < short)
         view.update(title: "", suffix: "")
         #expect(view.desiredWidth < noTitle)
+    }
+
+    @Test func bypassLeavesSamplesUntouched() {
+        let processor = EQProcessor()
+        var settings = EQSettings.makeDefault()
+        settings.preGainDB = -12
+        settings.bands[4].gainDB = 12
+        processor.setSampleRate(sampleRate)
+
+        let input: [Float32] = [0.5, -0.25, 0.75, -0.5]
+        processor.update(settings: settings)
+        var processed = input
+        processed.withUnsafeMutableBufferPointer {
+            processor.process($0.baseAddress!, frames: 2, channels: 2)
+        }
+        #expect(processed != input, "sanity: processing should change the signal")
+
+        settings.isBypassed = true
+        processor.update(settings: settings)
+        var bypassed = input
+        bypassed.withUnsafeMutableBufferPointer {
+            processor.process($0.baseAddress!, frames: 2, channels: 2)
+        }
+        #expect(bypassed == input, "bypass must not touch a single sample")
+    }
+
+    @Test func tapFormatValidation() {
+        var format = AudioStreamBasicDescription(
+            mSampleRate: 48_000, mFormatID: kAudioFormatLinearPCM,
+            mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+            mBytesPerPacket: 8, mFramesPerPacket: 1, mBytesPerFrame: 8,
+            mChannelsPerFrame: 2, mBitsPerChannel: 32, mReserved: 0)
+        #expect(ProcessTapEngine.unsupportedFormatReason(format) == nil)
+
+        format.mFormatFlags |= kAudioFormatFlagIsNonInterleaved
+        #expect(ProcessTapEngine.unsupportedFormatReason(format) == "non-interleaved")
+
+        format.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked
+        #expect(ProcessTapEngine.unsupportedFormatReason(format) == "not float")
+
+        format.mFormatFlags = kAudioFormatFlagIsFloat
+        format.mBitsPerChannel = 64
+        #expect(ProcessTapEngine.unsupportedFormatReason(format) == "64-bit")
+
+        // An unread (zeroed) description must not be treated as a failure.
+        #expect(ProcessTapEngine.unsupportedFormatReason(AudioStreamBasicDescription()) == nil)
+    }
+
+    @Test func settingsCarryBypassAndBindings() throws {
+        var settings = EQSettings.makeDefault()
+        settings.isBypassed = true
+        settings.presetBindings = ["uid-1": "Bass Boost"]
+        let restored = try JSONDecoder().decode(EQSettings.self, from: JSONEncoder().encode(settings))
+        #expect(restored.isBypassed)
+        #expect(restored.presetBindings["uid-1"] == "Bass Boost")
+
+        // Settings written before these keys existed must still load.
+        let legacy = #"{"isEnabled":true,"preGainDB":0}"#
+        let old = try JSONDecoder().decode(EQSettings.self, from: Data(legacy.utf8))
+        #expect(!old.isBypassed)
+        #expect(old.presetBindings.isEmpty)
     }
 
     // MARK: - Rate switch policy

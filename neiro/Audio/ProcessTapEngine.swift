@@ -1,3 +1,4 @@
+import AudioToolbox
 import CoreAudio
 import Foundation
 import Synchronization
@@ -64,8 +65,17 @@ final class ProcessTapEngine {
         tapID = newTapID
 
         var tapFormat = AudioStreamBasicDescription()
-        try? tapID.read(kAudioTapPropertyFormat, into: &tapFormat)
+        let haveFormat = (try? tapID.read(kAudioTapPropertyFormat, into: &tapFormat)) != nil
         Self.logger.info("tap format: rate=\(tapFormat.mSampleRate) channels=\(tapFormat.mChannelsPerFrame) flags=\(tapFormat.mFormatFlags)")
+        // The IO block reads the tap's buffers as interleaved 32-bit float.
+        // Rather than emit noise if a future macOS hands us something else,
+        // refuse to run: the tap is torn down, so Music simply plays
+        // unprocessed through its own device.
+        if haveFormat, let problem = Self.unsupportedFormatReason(tapFormat) {
+            stopLocked()
+            throw CoreAudioError(status: OSStatus(kAudioFormatUnsupportedDataFormatError),
+                                 operation: "Unsupported tap format (\(problem))")
+        }
 
         matchOutputDeviceRate(outputDeviceUID: outputDeviceUID, to: preferredRate ?? tapFormat.mSampleRate)
 
@@ -133,6 +143,17 @@ final class ProcessTapEngine {
 
         Self.logger.info("engine started: aggregate rate=\(self.sampleRate) output=\(outputDeviceUID)")
         startDiagnostics()
+    }
+
+    /// nil when the format is one the IO block can handle.
+    static func unsupportedFormatReason(_ format: AudioStreamBasicDescription) -> String? {
+        guard format.mSampleRate > 0, format.mChannelsPerFrame > 0 else { return nil }
+        if format.mFormatID != kAudioFormatLinearPCM { return "not linear PCM" }
+        let flags = format.mFormatFlags
+        if flags & kAudioFormatFlagIsFloat == 0 { return "not float" }
+        if flags & kAudioFormatFlagIsNonInterleaved != 0 { return "non-interleaved" }
+        if format.mBitsPerChannel != 32 { return "\(format.mBitsPerChannel)-bit" }
+        return nil
     }
 
     /// Sets the output device's nominal rate to the tap's rate when supported,

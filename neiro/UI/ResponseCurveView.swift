@@ -83,12 +83,22 @@ struct ResponseCurveView: View {
 
     // MARK: - Drawing
 
+    private static let gridDecades: [(frequency: Double, label: String)] = [
+        (100, "100"), (1000, "1k"), (10_000, "10k"),
+    ]
+    private static let gridGains: [Double] = [12, -12]
+
     private func drawGrid(context: GraphicsContext, size: CGSize) {
         var gridLines = Path()
-        for decade in [100.0, 1000, 10_000] {
-            let x = xPosition(frequency: decade, width: size.width)
+        for decade in Self.gridDecades {
+            let x = xPosition(frequency: decade.frequency, width: size.width)
             gridLines.move(to: CGPoint(x: x, y: 0))
             gridLines.addLine(to: CGPoint(x: x, y: size.height))
+        }
+        for gain in Self.gridGains {
+            let y = yPosition(gainDB: gain, height: size.height)
+            gridLines.move(to: CGPoint(x: 0, y: y))
+            gridLines.addLine(to: CGPoint(x: size.width, y: y))
         }
         context.stroke(gridLines, with: .color(.secondary.opacity(0.15)), lineWidth: 1)
 
@@ -96,6 +106,20 @@ struct ResponseCurveView: View {
         zeroLine.move(to: CGPoint(x: 0, y: size.height / 2))
         zeroLine.addLine(to: CGPoint(x: size.width, y: size.height / 2))
         context.stroke(zeroLine, with: .color(.secondary.opacity(0.35)), lineWidth: 1)
+
+        // Scale markers: without them the curve says "something changed" but
+        // not how much.
+        for decade in Self.gridDecades {
+            let x = xPosition(frequency: decade.frequency, width: size.width)
+            context.draw(Text("\(decade.label)Hz").font(.system(size: 8)).foregroundStyle(.secondary),
+                         at: CGPoint(x: x + 2, y: size.height - 7), anchor: .leading)
+        }
+        for gain in Self.gridGains {
+            let y = yPosition(gainDB: gain, height: size.height)
+            let sign = gain > 0 ? "+" : ""
+            context.draw(Text("\(sign)\(Int(gain))").font(.system(size: 8)).foregroundStyle(.secondary),
+                         at: CGPoint(x: 3, y: y - 6), anchor: .leading)
+        }
     }
 
     private func drawCurve(context: GraphicsContext, size: CGSize) {

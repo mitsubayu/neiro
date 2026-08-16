@@ -88,6 +88,9 @@ final class AppState {
     @ObservationIgnored private var trackStartedAt: Date?
     @ObservationIgnored private var lastNotifiedTitle: String?
     @ObservationIgnored private var isPlayingPerNotification = false
+    @ObservationIgnored private var lastDetectionAt: Date?
+    @ObservationIgnored private var detectorHealthTask: Task<Void, Never>?
+    @ObservationIgnored private var lastDetectorRestartAt: Date?
     /// How long after a playerInfo track start we still treat playback as
     /// being at the head (covers unified-log delivery lag).
     private static let trackHeadWindow: TimeInterval = 6
@@ -197,6 +200,9 @@ final class AppState {
             return
         }
 
+        if outputUID != activeOutputUID {
+            applyPresetBinding(for: outputUID)
+        }
         activeOutputUID = outputUID
         let preferredRate = settings.followTrackRate ? lastTrackRate : nil
         if !resumePlaybackAfterStart, preferredRate == nil {
@@ -277,6 +283,26 @@ final class AppState {
         guard isPlaying else { return }
         if title != lastNotifiedTitle || !isPlayingPerNotification {
             trackStartedAt = date
+            scheduleDetectorHealthCheck(trackStartedAt: date)
+        }
+    }
+
+    /// A track just started, so the log stream owes us a format line. If none
+    /// arrives the stream is alive but no longer delivering (logd restarted,
+    /// child wedged) — restart it, which also re-reads the recent log and
+    /// recovers the current track's rate.
+    private func scheduleDetectorHealthCheck(trackStartedAt: Date) {
+        guard settings.isEnabled, settings.followTrackRate else { return }
+        detectorHealthTask?.cancel()
+        detectorHealthTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled, let self else { return }
+            if let last = self.lastDetectionAt, last >= trackStartedAt { return }
+            if let restarted = self.lastDetectorRestartAt,
+               Date().timeIntervalSince(restarted) < 60 { return }
+            Self.logger.error("no format detected 8s after a track start — restarting the detector")
+            self.lastDetectorRestartAt = Date()
+            self.rateDetector.restart()
         }
     }
 
@@ -293,6 +319,7 @@ final class AppState {
     /// are debounced: we act on the last rate that stays stable for 1.2s.
     private func handleDetectedTrackRate(_ rate: Double) {
         lastTrackRate = rate
+        lastDetectionAt = Date()
         Self.logger.info("detected track rate \(rate)")
         muteHeadIfSwitchPending()
         scheduleRateSwitchEvaluation()
@@ -609,6 +636,38 @@ final class AppState {
         (userPresets + BuiltInPresets.all)
             .first { $0.bands == settings.bands && $0.preGainDB == settings.preGainDB }?
             .name
+    }
+
+    /// Name of the device the current output resolves to, for menu labels.
+    var currentOutputDeviceName: String? {
+        guard let uid = resolveOutputUID() else { return nil }
+        return deviceMonitor.devices.first { $0.uid == uid }?.name
+    }
+
+    var boundPresetNameForCurrentDevice: String? {
+        guard let uid = resolveOutputUID() else { return nil }
+        return settings.presetBindings[uid]
+    }
+
+    /// Remembers that the active preset belongs to whatever device is playing
+    /// now — headphone correction is per device, so switching output should
+    /// bring its own curve along.
+    func bindActivePresetToCurrentDevice() {
+        guard let uid = resolveOutputUID(), let name = activePresetName else { return }
+        settings.presetBindings[uid] = name
+    }
+
+    func clearPresetBindingForCurrentDevice() {
+        guard let uid = resolveOutputUID() else { return }
+        settings.presetBindings.removeValue(forKey: uid)
+    }
+
+    private func applyPresetBinding(for deviceUID: String) {
+        guard let name = settings.presetBindings[deviceUID], name != activePresetName,
+              let preset = (userPresets + BuiltInPresets.all).first(where: { $0.name == name })
+        else { return }
+        Self.logger.info("applying preset bound to output device")
+        applyPreset(preset)
     }
 
     private func applyLaunchAtLogin() {
