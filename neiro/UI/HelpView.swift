@@ -12,7 +12,7 @@ struct HelpView: View {
     private let topics: [Topic] = [
         Topic(title: String(localized: "Playback", table: "Help"), points: [
             String(localized: "neiro captures Music.app and plays it back through the output device you pick. Music's own output stays muted meanwhile, so you hear one signal, not two.", table: "Help"),
-            String(localized: "Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. The audio itself is processed as 32-bit float, so this is rate matching rather than bit-perfect playback.", table: "Help"),
+            String(localized: "Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. It matches the rate; it does not claim bit-perfect delivery.", table: "Help"),
             String(localized: "Mid-track it never interrupts: a rate change for the next song waits for the track boundary.", table: "Help"),
         ]),
         Topic(title: String(localized: "EQ", table: "Help"), points: [

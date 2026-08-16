@@ -39,7 +39,7 @@ Requires macOS 15 or later and Music.app. Apple Silicon and Intel.
 | --- | --- |
 | Follows the source rate per track | Yes — 44.1 / 48 / 96 kHz, verified against the DAC's own reported rate |
 | Gapless rate switching | **No.** The track is paused, the engine rebuilt and the track restarted from 0:00, so a rate change costs about 2.4 seconds of silence at the start of the track |
-| Bit-perfect | **No.** A process tap hands over 32-bit float, and the EQ works in float, so this is rate matching rather than a bit-perfect path |
+| Bit-perfect | **Not claimed.** With Bypass on and the rate matched, nothing here alters a sample (float32 is a lossless carrier for ≤24-bit content), but the aggregate device runs drift compensation and Music's own volume applies ahead of the tap — none of which has been measured. neiro promises rate matching, not bit-perfect delivery |
 | Audio driver | None needed — the process tap is the whole mechanism |
 | EQ | 10 bands, parametric, with a draggable curve; presets can be bound to an output device |
 | Headphone profile library, profile import/export, A/B level matching | Not implemented |

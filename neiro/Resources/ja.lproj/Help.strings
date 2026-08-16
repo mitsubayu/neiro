@@ -2,7 +2,7 @@
 "neiro Help" = "neiro のヘルプ";
 "Playback" = "再生";
 "neiro captures Music.app and plays it back through the output device you pick. Music's own output stays muted meanwhile, so you hear one signal, not two." = "neiro はミュージックの音を取り込み、選んだ出力デバイスで鳴らします。その間ミュージック自身の出力はミュートされるので、音が二重になることはありません。";
-"Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. The audio itself is processed as 32-bit float, so this is rate matching rather than bit-perfect playback." = "Native rate は曲ごとのサンプルレートに追従します。レートが変わる曲では短い無音のあと、正しいレートで曲の頭から再生されます。音声そのものは 32bit float で処理されるため、これはレートの一致であってビットパーフェクト再生ではありません。";
+"Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. It matches the rate; it does not claim bit-perfect delivery." = "Native rate は曲ごとのサンプルレートに追従します。レートが変わる曲では短い無音のあと、正しいレートで曲の頭から再生されます。合わせるのはレートまでで、ビットパーフェクト再生をうたうものではありません。";
 "Mid-track it never interrupts: a rate change for the next song waits for the track boundary." = "曲の途中で音が途切れることはありません。次の曲のためのレート変更は曲の切れ目まで待ちます。";
 "EQ" = "EQ";
 "Drag a handle on the curve to change its gain. Hold ⌥ while dragging to move its frequency instead." = "カーブ上のハンドルをドラッグするとゲインが変わります。⌥ を押しながらドラッグすると周波数を動かせます。";
