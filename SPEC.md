@@ -3,7 +3,7 @@
 Apple Music (Music.app) の音声をフルレート(ビット・パーフェクト志向)で再生しつつ、
 パラメトリック EQ をかける macOS メニューバー常駐アプリ。
 
-- リポジトリ: `~/repos/neiro`(ディレクトリ名は旧名のまま。アプリ名・バンドル ID は neiro)
+- リポジトリ: `~/repos/neiro` / リモート: https://dev.azure.com/c-mitsuba/neiro
 - バンドル ID: `com.mitsuba.neiro` / ログ subsystem: `com.mitsuba.neiro`
 - 対象 OS: macOS 15.0+(Core Audio Process Tap API のため実質 14.2+ が下限。開発機は macOS 26)
 
