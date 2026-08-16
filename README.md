@@ -33,6 +33,17 @@ interrupts: a change needed by the next song waits for the track boundary.
 
 Requires macOS 15 or later and Music.app. Apple Silicon and Intel.
 
+## What it does and does not do
+
+| | |
+| --- | --- |
+| Follows the source rate per track | Yes — 44.1 / 48 / 96 kHz, verified against the DAC's own reported rate |
+| Gapless rate switching | **No.** The track is paused, the engine rebuilt and the track restarted from 0:00, so a rate change costs about 2.4 seconds of silence at the start of the track |
+| Bit-perfect | **No.** A process tap hands over 32-bit float, and the EQ works in float, so this is rate matching rather than a bit-perfect path |
+| Audio driver | None needed — the process tap is the whole mechanism |
+| EQ | 10 bands, parametric, with a draggable curve; presets can be bound to an output device |
+| Headphone profile library, profile import/export, A/B level matching | Not implemented |
+
 ## Install
 
 Download the zip from [Releases](../../releases), unpack it, and move

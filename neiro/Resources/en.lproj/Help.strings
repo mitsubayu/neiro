@@ -2,7 +2,7 @@
 "neiro Help" = "neiro Help";
 "Playback" = "Playback";
 "neiro captures Music.app and plays it back through the output device you pick. Music's own output stays muted meanwhile, so you hear one signal, not two." = "neiro captures Music.app and plays it back through the output device you pick. Music's own output stays muted meanwhile, so you hear one signal, not two.";
-"bit-perfect follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate." = "bit-perfect follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate.";
+"Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. The audio itself is processed as 32-bit float, so this is rate matching rather than bit-perfect playback." = "Native rate follows each track's own sample rate. When a track needs a different rate there is a short silence, then the track plays from its beginning at the right rate. The audio itself is processed as 32-bit float, so this is rate matching rather than bit-perfect playback.";
 "Mid-track it never interrupts: a rate change for the next song waits for the track boundary." = "Mid-track it never interrupts: a rate change for the next song waits for the track boundary.";
 "EQ" = "EQ";
 "Drag a handle on the curve to change its gain. Hold ⌥ while dragging to move its frequency instead." = "Drag a handle on the curve to change its gain. Hold ⌥ while dragging to move its frequency instead.";

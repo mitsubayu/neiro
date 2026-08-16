@@ -54,7 +54,7 @@ struct MenuBarRootView: View {
                 Text("Output").font(.caption).foregroundStyle(.secondary)
                 OutputDevicePicker()
                 Toggle(isOn: $appState.settings.followTrackRate) {
-                    Text("bit-perfect").font(.caption)
+                    Text("Native rate").font(.caption)
                 }
                 .toggleStyle(.button)
                 .help("Follow the track's own sample rate")

@@ -1,6 +1,6 @@
 # neiro — 要件・開発仕様書
 
-Apple Music (Music.app) の音声をフルレート(ビット・パーフェクト志向)で再生しつつ、
+Apple Music (Music.app) の音声を曲ごとのネイティブレートのまま再生しつつ、
 パラメトリック EQ をかける macOS メニューバー常駐アプリ。
 
 - バンドル ID: `com.mitsuba.neiro` / ログ subsystem: `com.mitsuba.neiro`
@@ -196,7 +196,7 @@ Music.app ──(Process Tap: mutedWhenTapped)──▶ 集約デバイス ─�
 | 列 | 幅 | 内容 |
 |---|---|---|
 | 左 | 350 | ジャケ写。曲名・アーティスト・`ALAC 44.1kHz/16bit` を下部に重ねる |
-| 中 | 400 | neiro 表示+状態 / Output+bit-perfect / EQ ツールバー(Presets・Bypass・Reset・Undo/Redo)/ 応答カーブ+スペクトラム / Pre-gain |
+| 中 | 400 | neiro 表示+状態 / Output+Native rate / EQ ツールバー(Presets・Bypass・Reset・Undo/Redo)/ 応答カーブ+スペクトラム / Pre-gain |
 | 右 | 400 | Bands 10本(有効チェック + **gain・Q・freq** の各スライダーと数値)。右上にピン、右下に ⚙(Enable neiro・Launch at login・About)と Quit |
 
 - バンドの並びは慣習の freq→gain→Q ではなく **gain→Q→freq**。10本が既定周波数に固定された
