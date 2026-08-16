@@ -28,6 +28,22 @@ struct MenuBarTests {
     }
 
     @MainActor
+    @Test func statusItemSaysNothingWhenNothingPlays() {
+        let playing = StatusItemController.statusText(
+            title: "初恋", suffix: "ALAC 96kHz/24bit", isRunning: true)
+        #expect(playing == ("初恋", "· ALAC 96kHz/24bit"))
+
+        // No track: the format belongs to an idle engine, not to music.
+        #expect(StatusItemController.statusText(
+            title: nil, suffix: "ALAC 44.1kHz/16bit", isRunning: true).suffix == "")
+        #expect(StatusItemController.statusText(
+            title: "", suffix: "ALAC 44.1kHz/16bit", isRunning: true).suffix == "")
+        // Not running: nothing at all.
+        #expect(StatusItemController.statusText(
+            title: "初恋", suffix: "ALAC 96kHz/24bit", isRunning: false) == ("", ""))
+    }
+
+    @MainActor
     @Test func aboutCreditsLinkTheAuthor() {
         let credits = AboutCredits.attributedString()
         let text = credits.string

@@ -179,14 +179,21 @@ final class StatusItemController: NSObject {
         }
     }
 
+    /// What the menu bar item says. Pure, because the rule that matters is
+    /// easy to break: with no track the format would describe an idle engine
+    /// rather than anything being listened to, so the item shrinks back to
+    /// just the icon.
+    static func statusText(title: String?, suffix: String,
+                           isRunning: Bool) -> (title: String, suffix: String) {
+        guard isRunning, let title, !title.isEmpty else { return ("", "") }
+        return (title, suffix.isEmpty ? "" : "· " + suffix)
+    }
+
     private func refresh() {
-        let running = appState.status == .running
-        let title = running ? (appState.nowPlayingTitle ?? "") : ""
-        var suffix = running ? appState.menuBarSuffix : ""
-        if !title.isEmpty, !suffix.isEmpty {
-            suffix = "· " + suffix
-        }
-        marqueeView.update(title: title, suffix: suffix)
+        let text = Self.statusText(title: appState.nowPlayingTitle,
+                                   suffix: appState.menuBarSuffix,
+                                   isRunning: appState.status == .running)
+        marqueeView.update(title: text.title, suffix: text.suffix)
         marqueeWidthConstraint?.constant = marqueeView.desiredWidth
         statusItem.length = marqueeView.desiredWidth + 12
         syncDismissMonitor()

@@ -50,7 +50,7 @@ struct HelpView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Image(nsImage: NSApp.applicationIconImage)
+            Image(nsImage: AppIconImage.full)
                 .resizable()
                 .frame(width: 72, height: 72)
             Text("neiro").font(.title3.weight(.semibold))

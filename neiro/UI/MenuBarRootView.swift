@@ -316,7 +316,7 @@ private struct NowPlayingArtwork: View {
                     // Nothing playing: the app's own icon reads as "this is
                     // neiro, waiting" rather than as a track that failed to
                     // load its cover.
-                    Image(nsImage: NSApp.applicationIconImage)
+                    Image(nsImage: AppIconImage.full)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: MenuBarRootView.artworkSize * 0.42)
@@ -328,27 +328,29 @@ private struct NowPlayingArtwork: View {
             .frame(width: MenuBarRootView.artworkSize, height: MenuBarRootView.artworkSize)
             .clipped()
 
-            LinearGradient(colors: [.clear, .black.opacity(0.78)],
-                           startPoint: .center, endPoint: .bottom)
+            // With no track there is nothing to caption, and a format read off
+            // the idle engine would describe silence — leave the icon alone.
+            if let title = appState.nowPlayingTitle {
+                LinearGradient(colors: [.clear, .black.opacity(0.78)],
+                               startPoint: .center, endPoint: .bottom)
 
-            VStack(alignment: .leading, spacing: 3) {
-                if let title = appState.nowPlayingTitle {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(title).font(.headline).lineLimit(2)
+                    if let artist = appState.nowPlayingArtist, !artist.isEmpty {
+                        Text(artist).font(.caption).opacity(0.85).lineLimit(1)
+                    }
+                    if appState.status == .running {
+                        Text(appState.menuBarSuffix)
+                            .font(.caption2.monospacedDigit())
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(.white.opacity(0.18), in: Capsule())
+                            .padding(.top, 2)
+                    }
                 }
-                if let artist = appState.nowPlayingArtist, !artist.isEmpty {
-                    Text(artist).font(.caption).opacity(0.85).lineLimit(1)
-                }
-                if appState.status == .running {
-                    Text(appState.menuBarSuffix)
-                        .font(.caption2.monospacedDigit())
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(.white.opacity(0.18), in: Capsule())
-                        .padding(.top, 2)
-                }
+                .foregroundStyle(.white)
+                .padding(12)
             }
-            .foregroundStyle(.white)
-            .padding(12)
         }
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
