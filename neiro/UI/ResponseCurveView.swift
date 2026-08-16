@@ -7,8 +7,8 @@ struct ResponseCurveView: View {
     @Binding var bands: [EQBand]
     let preGainDB: Double
     let sampleRate: Double
-    /// Normalized 0…1 magnitudes on the same log-frequency axis as the curve.
-    var spectrum: [Float] = []
+    /// Live audio for the spectrum behind the curve; nil hides it.
+    var spectrumTap: SpectrumTap?
 
     @State private var draggingIndex: Int?
 
@@ -25,9 +25,13 @@ struct ResponseCurveView: View {
             let size = geometry.size
             Canvas { context, size in
                 drawGrid(context: context, size: size)
-                drawSpectrum(context: context, size: size)
                 drawCurve(context: context, size: size)
                 drawHandles(context: context, size: size)
+            }
+            .background {
+                if let spectrumTap {
+                    SpectrumBacking(tap: spectrumTap, sampleRate: sampleRate)
+                }
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -123,25 +127,6 @@ struct ResponseCurveView: View {
             context.draw(Text("\(sign)\(Int(gain))").font(.system(size: 8)).foregroundStyle(.secondary),
                          at: CGPoint(x: 3, y: y - 6), anchor: .leading)
         }
-    }
-
-    /// Filled spectrum behind the curve: it shares the frequency axis, so the
-    /// band you are dragging lines up with the energy you are hearing.
-    private func drawSpectrum(context: GraphicsContext, size: CGSize) {
-        guard spectrum.count > 1 else { return }
-        var area = Path()
-        area.move(to: CGPoint(x: 0, y: size.height))
-        for (index, level) in spectrum.enumerated() {
-            let fraction = Double(index) / Double(spectrum.count - 1)
-            let x = fraction * size.width
-            let y = size.height - CGFloat(level) * size.height
-            area.addLine(to: CGPoint(x: x, y: y))
-        }
-        area.addLine(to: CGPoint(x: size.width, y: size.height))
-        area.closeSubpath()
-        context.fill(area, with: .linearGradient(
-            Gradient(colors: [.accentColor.opacity(0.38), .accentColor.opacity(0.06)]),
-            startPoint: CGPoint(x: 0, y: 0), endPoint: CGPoint(x: 0, y: size.height)))
     }
 
     private func drawCurve(context: GraphicsContext, size: CGSize) {

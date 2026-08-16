@@ -30,6 +30,7 @@
 		D9D10DAC042DF36F76828543 /* EQModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E437D51DE4866987DCECAA8F /* EQModel.swift */; };
 		E28F5A9CF65196D1659D587D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070094852EBD4F24EF30E1B9 /* AppState.swift */; };
 		E347062E24B5CF96A732FE67 /* OutputDevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */; };
+		EDB3130E8800584AB404B7CC /* SpectrumBackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2B2B1EFF288FEE9521B046 /* SpectrumBackingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,7 @@
 		1277BE7733CA5BE8BF0C1229 /* ProcessTapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapEngine.swift; sourceTree = "<group>"; };
 		14B019F35C3F44EF7E71F95A /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1C0EF54BC11A2943DF924034 /* BiquadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadTests.swift; sourceTree = "<group>"; };
+		1F2B2B1EFF288FEE9521B046 /* SpectrumBackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumBackingView.swift; sourceTree = "<group>"; };
 		32A9C8CBEF2B9FDE98A0383D /* RateSwitchPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateSwitchPolicy.swift; sourceTree = "<group>"; };
 		34F682E7E821B2DE5E44F357 /* TrackRateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRateDetector.swift; sourceTree = "<group>"; };
 		35C73759FE93D83C90FC3131 /* IconGlyph.svg */ = {isa = PBXFileReference; path = IconGlyph.svg; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 				5ACFBF4117B1A23BE1F49A0E /* MenuBarRootView.swift */,
 				42E6EC86733237E4885AEA22 /* OutputDevicePicker.swift */,
 				679E76739FB96693AF85DAE4 /* ResponseCurveView.swift */,
+				1F2B2B1EFF288FEE9521B046 /* SpectrumBackingView.swift */,
 				6B393FA4F14921B4956CD079 /* StatusItemController.swift */,
 			);
 			path = UI;
@@ -289,6 +292,7 @@
 				2DB31CCC6ED056A97DFFAECA /* ResponseCurveView.swift in Sources */,
 				316B42D44CAA2C09B257F6E2 /* SettingsStore.swift in Sources */,
 				3AF18B48561113169F7666FD /* SpectrumAnalyzer.swift in Sources */,
+				EDB3130E8800584AB404B7CC /* SpectrumBackingView.swift in Sources */,
 				0F3346236A651BACB6379BD0 /* StatusItemController.swift in Sources */,
 				A9A11839491CEB1300DC2AE7 /* TrackRateDetector.swift in Sources */,
 			);

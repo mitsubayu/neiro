@@ -76,11 +76,9 @@ final class AppState {
     @ObservationIgnored private var isSwitchingRate = false
     @ObservationIgnored private var pendingRateTask: Task<Void, Never>?
     @ObservationIgnored private var muteCheckInFlight = false
-    /// Smoothed spectrum for the curve overlay, updated only while the panel
-    /// is open.
-    private(set) var spectrumLevels: [Float] = []
-    @ObservationIgnored private let analyzer = SpectrumAnalyzer()
-    @ObservationIgnored private var spectrumTask: Task<Void, Never>?
+    /// Live audio for the spectrum display. The view drives its own refresh
+    /// loop from this; nothing about it flows through observable state.
+    var spectrumTap: SpectrumTap { engine.spectrumTap }
 
     /// Rate we are switching to while the change is in flight — surfaced in
     /// the UI so the silence during a switch is explained rather than
@@ -655,36 +653,6 @@ final class AppState {
                 self.nowPlayingArtist = nil
             }
             self.nowPlayingArtwork = result.1 ? NSImage(contentsOfFile: artworkPath) : nil
-        }
-    }
-
-    // MARK: - Spectrum
-
-    /// Driven by the panel's lifetime: the IO thread does not even copy
-    /// samples while nothing is on screen.
-    func setSpectrumActive(_ active: Bool) {
-        guard active != engine.spectrumTap.isCapturing else { return }
-        engine.spectrumTap.setActive(active)
-        spectrumTask?.cancel()
-        guard active else {
-            spectrumTask = nil
-            spectrumLevels = []
-            return
-        }
-        spectrumTask = Task { @MainActor [weak self] in
-            let window = UnsafeMutablePointer<Float>.allocate(capacity: SpectrumTap.fftSize)
-            window.initialize(repeating: 0, count: SpectrumTap.fftSize)
-            defer { window.deallocate() }
-            while !Task.isCancelled {
-                guard let self else { return }
-                if self.engine.spectrumTap.latestWindow(into: window) {
-                    self.analyzer.analyze(window: window, sampleRate: self.engineSampleRate)
-                } else {
-                    self.analyzer.decay()
-                }
-                self.spectrumLevels = self.analyzer.levels
-                try? await Task.sleep(for: .milliseconds(33))
-            }
         }
     }
 
