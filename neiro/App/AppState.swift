@@ -31,6 +31,14 @@ final class AppState {
     private(set) var trackBitDepth: Int?
     private(set) var trackCodec: String?
     private(set) var userPresets: [EQPreset] = PresetStore.load()
+    /// Undo history for the EQ. Observable so the buttons enable themselves.
+    private var history = EQHistory()
+    @ObservationIgnored private var settledSnapshot: EQSnapshot
+    @ObservationIgnored private var historyTask: Task<Void, Never>?
+    @ObservationIgnored private var isApplyingHistory = false
+
+    var canUndo: Bool { history.canUndo }
+    var canRedo: Bool { history.canRedo }
     private(set) var activePresetName: String?
     private(set) var nowPlayingTitle: String?
     private(set) var nowPlayingArtist: String?
@@ -112,6 +120,7 @@ final class AppState {
     init() {
         let loaded = SettingsStore.load()
         settings = loaded
+        settledSnapshot = EQSnapshot(loaded)
         engine = ProcessTapEngine(processor: processor)
         processor.update(settings: loaded)
 
@@ -147,6 +156,7 @@ final class AppState {
     private func handleSettingsChange(oldValue: EQSettings) {
         processor.update(settings: settings)
         scheduleSave()
+        recordHistory()
         updateRateDetectorState()
         activePresetName = matchingPresetName()
         if oldValue.launchAtLogin != settings.launchAtLogin {
@@ -666,6 +676,43 @@ final class AppState {
                 self.nowPlayingArtwork = nil
             }
         }
+    }
+
+    // MARK: - Undo / redo
+
+    /// Dragging a slider produces hundreds of changes, so a history entry is
+    /// only committed once the value has stopped moving.
+    private func recordHistory() {
+        guard !isApplyingHistory else { return }
+        guard EQSnapshot(settings) != settledSnapshot else { return }
+        historyTask?.cancel()
+        historyTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self else { return }
+            let settled = EQSnapshot(self.settings)
+            guard settled != self.settledSnapshot else { return }
+            self.history.commit(previous: self.settledSnapshot)
+            self.settledSnapshot = settled
+        }
+    }
+
+    func undo() {
+        guard let previous = history.undo(current: EQSnapshot(settings)) else { return }
+        applyHistory(previous)
+    }
+
+    func redo() {
+        guard let next = history.redo(current: EQSnapshot(settings)) else { return }
+        applyHistory(next)
+    }
+
+    private func applyHistory(_ snapshot: EQSnapshot) {
+        historyTask?.cancel()
+        isApplyingHistory = true
+        settings.bands = snapshot.bands
+        settings.preGainDB = snapshot.preGainDB
+        settledSnapshot = snapshot
+        isApplyingHistory = false
     }
 
     // MARK: - Presets & login item

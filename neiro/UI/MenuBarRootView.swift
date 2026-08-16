@@ -1,215 +1,193 @@
 import SwiftUI
 
+/// Wide three-column panel: artwork, controls, bands. Laying it out sideways
+/// keeps the artwork large while halving the height, and it retires the
+/// folding section whose expand/collapse used to resize the window.
 struct MenuBarRootView: View {
     @Environment(AppState.self) private var appState
     @State private var isNamingPreset = false
     @State private var presetName = ""
-    @State private var bandsExpanded = false
 
-    private static let contentWidth: CGFloat = 352
+    static let artworkSize: CGFloat = 350
+    // The extra width goes to the curve, which is the thing you drag.
+    static let controlsWidth: CGFloat = 400
+    // Wide enough for three sliders each followed by its own readout.
+    static let bandsWidth: CGFloat = 400
+    static let panelWidth: CGFloat = artworkSize + controlsWidth + bandsWidth + 14 * 4
+    static let panelHeight: CGFloat = artworkSize + 14 * 2
 
     var body: some View {
-        @Bindable var appState = appState
-        // The window is a fixed size while open, so anything that grows —
-        // notably the Bands section — scrolls rather than resizing the panel.
-        ScrollView {
-            content
+        HStack(alignment: .top, spacing: 14) {
+            NowPlayingArtwork()
+                .frame(width: Self.artworkSize, height: Self.artworkSize)
+            controls
+                .frame(width: Self.controlsWidth)
+            bands
+                .frame(width: Self.bandsWidth)
         }
-        .frame(width: StatusItemController.panelWidth)
-        .scrollBounceBehavior(.basedOnSize)
+        .padding(14)
+        .frame(width: Self.panelWidth, height: Self.panelHeight)
     }
 
-    private var content: some View {
+    // MARK: - Middle column
+
+    private var controls: some View {
         @Bindable var appState = appState
         return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Toggle(isOn: $appState.settings.isEnabled) {
-                    Text("neiro").font(.headline)
-                }
-                .toggleStyle(.switch)
+            HStack(spacing: 8) {
+                Text("neiro").font(.headline)
                 Spacer()
-                Text(statusText)
-                    .font(.caption)
-                    .foregroundStyle(statusColor)
-                Button {
-                    appState.settings.panelPinned.toggle()
-                } label: {
-                    Image(systemName: appState.settings.panelPinned ? "pin.fill" : "pin")
-                        .rotationEffect(.degrees(appState.settings.panelPinned ? 0 : 45))
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(appState.settings.panelPinned ? Color.accentColor : .secondary)
-                .help(appState.settings.panelPinned
-                      ? "Panel stays open until you close it"
-                      : "Keep the panel open when clicking elsewhere")
+                statusAccessory
             }
 
-            if let title = appState.nowPlayingTitle {
-                ZStack(alignment: .bottomLeading) {
-                    Group {
-                        if let artwork = appState.nowPlayingArtwork {
-                            Image(nsImage: artwork)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } else {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(.quaternary.opacity(0.5))
-                        }
-                    }
-                    .frame(width: Self.contentWidth, height: Self.contentWidth)
-                    .clipped()
-
-                    LinearGradient(colors: [.clear, .black.opacity(0.75)],
-                                   startPoint: .center, endPoint: .bottom)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.headline)
-                            .lineLimit(2)
-                        if let artist = appState.nowPlayingArtist, !artist.isEmpty {
-                            Text(artist)
-                                .font(.caption)
-                                .opacity(0.85)
-                                .lineLimit(1)
-                        }
-                    }
-                    .foregroundStyle(.white)
-                    .padding(10)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-
-            if case .error = appState.status {
-                Button("Open Privacy Settings") {
-                    let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture"
-                    if let url = URL(string: url) { NSWorkspace.shared.open(url) }
-                }
-                .font(.caption)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("Output").font(.caption).foregroundStyle(.secondary)
                 OutputDevicePicker()
                 Toggle(isOn: $appState.settings.followTrackRate) {
-                    Text("Follow track sample rate (bit-perfect)")
-                        .font(.caption)
+                    Text("bit-perfect").font(.caption)
                 }
-                .toggleStyle(.checkbox)
+                .toggleStyle(.button)
+                .help("Follow the track's own sample rate")
             }
 
-            Divider()
-
-            HStack {
-                Menu {
-                    Section("Built-in") {
-                        ForEach(BuiltInPresets.all) { preset in
-                            Button(preset.name) { appState.applyPreset(preset) }
-                        }
-                    }
-                    if !appState.userPresets.isEmpty {
-                        Section("My Presets") {
-                            ForEach(appState.userPresets) { preset in
-                                Menu(preset.name) {
-                                    Button("Apply") { appState.applyPreset(preset) }
-                                    Button("Update with Current EQ") { appState.updatePreset(preset) }
-                                    Button("Delete", role: .destructive) { appState.deletePreset(preset) }
-                                }
-                            }
-                        }
-                    }
-                    Divider()
-                    if let device = appState.currentOutputDeviceName {
-                        if appState.boundPresetNameForCurrentDevice != nil {
-                            Button("Stop auto-applying on \(device)") {
-                                appState.clearPresetBindingForCurrentDevice()
-                            }
-                        }
-                        Button("Auto-apply this preset on \(device)") {
-                            appState.bindActivePresetToCurrentDevice()
-                        }
-                        .disabled(appState.activePresetName == nil)
-                    }
-                    Button("Save Current as Preset…") {
-                        presetName = ""
-                        isNamingPreset = true
-                    }
-                } label: {
-                    Label(appState.activePresetName ?? "Presets", systemImage: "square.stack.3d.up")
-                        .font(appState.activePresetName == nil ? .caption : .caption.bold())
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                Spacer()
+            HStack(spacing: 8) {
+                Text("EQ").font(.caption.bold()).foregroundStyle(.secondary)
+                presetMenu
                 Toggle(isOn: $appState.settings.isBypassed) {
                     Text("Bypass").font(.caption)
                 }
                 .toggleStyle(.button)
                 .help("Pass audio through untouched for an instant A/B")
-            }
-            .alert("Save Preset", isPresented: $isNamingPreset) {
-                TextField("Preset name", text: $presetName)
-                Button("Save") { appState.saveCurrentAsPreset(named: presetName) }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Saves the current bands and pre-gain.")
+                Button {
+                    for index in appState.settings.bands.indices {
+                        appState.settings.bands[index].gainDB = 0
+                    }
+                    appState.settings.preGainDB = 0
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                .help("Reset the EQ to flat")
+                Spacer()
+                HistoryButtons()
             }
 
             ResponseCurveView(bands: $appState.settings.bands,
                               preGainDB: appState.settings.preGainDB,
                               sampleRate: appState.engineSampleRate,
                               spectrumTap: appState.spectrumTap)
-                .frame(height: 150)
+                .frame(maxHeight: .infinity)
                 .opacity(appState.settings.isBypassed ? 0.35 : 1)
                 .overlay {
                     if appState.settings.isBypassed {
-                        Text("BYPASSED")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
+                        Text("BYPASSED").font(.caption.bold()).foregroundStyle(.secondary)
                     }
                 }
 
-            HStack {
-                Text("Pre-gain").font(.caption)
+            HStack(spacing: 6) {
+                Text("Pre-gain").font(.caption).foregroundStyle(.secondary)
                 Slider(value: $appState.settings.preGainDB, in: -24...6)
                 Text(appState.settings.preGainDB, format: .number.precision(.fractionLength(1)))
                     .font(.caption.monospacedDigit())
-                    .frame(width: 38, alignment: .trailing)
+                    .frame(width: 32, alignment: .trailing)
                 Text("dB").font(.caption2).foregroundStyle(.secondary)
             }
+        }
+    }
 
-            Divider()
+    /// The format now lives on the artwork, so this only speaks up when
+    /// something needs attention.
+    @ViewBuilder
+    private var statusAccessory: some View {
+        if let target = appState.switchTargetRate {
+            Text("→ \(AppState.rateLabel(target))")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        } else if case .error = appState.status {
+            Button("Fix permission…") {
+                let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture"
+                if let url = URL(string: url) { NSWorkspace.shared.open(url) }
+            }
+            .font(.caption)
+        } else if appState.status != .running {
+            Text(appState.status.label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
 
-            DisclosureGroup(isExpanded: $bandsExpanded) {
-                VStack(spacing: 6) {
-                    ForEach($appState.settings.bands) { $band in
-                        EQBandRow(band: $band)
+    private var presetMenu: some View {
+        Menu {
+            Section("Built-in") {
+                ForEach(BuiltInPresets.all) { preset in
+                    Button(preset.name) { appState.applyPreset(preset) }
+                }
+            }
+            if !appState.userPresets.isEmpty {
+                Section("My Presets") {
+                    ForEach(appState.userPresets) { preset in
+                        Menu(preset.name) {
+                            Button("Apply") { appState.applyPreset(preset) }
+                            Button("Update with Current EQ") { appState.updatePreset(preset) }
+                            Button("Delete", role: .destructive) { appState.deletePreset(preset) }
+                        }
                     }
                 }
-            } label: {
-                Text("Bands (freq / gain / Q)")
-                    .font(.caption)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation { bandsExpanded.toggle() }
+            }
+            Divider()
+            if let device = appState.currentOutputDeviceName {
+                if appState.boundPresetNameForCurrentDevice != nil {
+                    Button("Stop auto-applying on \(device)") {
+                        appState.clearPresetBindingForCurrentDevice()
                     }
+                }
+                Button("Auto-apply this preset on \(device)") {
+                    appState.bindActivePresetToCurrentDevice()
+                }
+                .disabled(appState.activePresetName == nil)
+            }
+            Button("Save Current as Preset…") {
+                presetName = ""
+                isNamingPreset = true
+            }
+        } label: {
+            Text(appState.activePresetName ?? "Presets")
+                .font(appState.activePresetName == nil ? .caption : .caption.bold())
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .alert("Save Preset", isPresented: $isNamingPreset) {
+            TextField("Preset name", text: $presetName)
+            Button("Save") { appState.saveCurrentAsPreset(named: presetName) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Saves the current bands and pre-gain.")
+        }
+    }
+
+    // MARK: - Right column
+
+    private var bands: some View {
+        @Bindable var appState = appState
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Bands").font(.caption.bold()).foregroundStyle(.secondary)
+                Text("freq / gain / Q").font(.caption2).foregroundStyle(.tertiary)
+                Spacer()
+                PinButton()
             }
 
-            Divider()
+            ForEach($appState.settings.bands) { $band in
+                Spacer(minLength: 0)
+                EQBandRow(band: $band)
+            }
 
-            HStack(spacing: 8) {
-                Button("Reset EQ") {
-                    for index in appState.settings.bands.indices {
-                        appState.settings.bands[index].gainDB = 0
-                    }
-                    appState.settings.preGainDB = 0
-                }
+            Spacer(minLength: 6)
+
+            HStack(spacing: 6) {
                 Spacer()
-                // Set-and-forget preferences live behind the gear so the
-                // footer stays about the two things you actually press.
                 Menu {
+                    Toggle("Enable neiro", isOn: $appState.settings.isEnabled)
+                    Divider()
                     Toggle("Launch at login", isOn: $appState.settings.launchAtLogin)
                 } label: {
                     Image(systemName: "gearshape")
@@ -217,34 +195,101 @@ struct MenuBarRootView: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                Button("Quit neiro") { NSApplication.shared.terminate(nil) }
+                Button("Quit") { NSApplication.shared.terminate(nil) }
             }
             .font(.caption)
-        }
-        .padding(14)
-        .frame(width: StatusItemController.panelWidth)
-    }
-
-    private var statusText: String {
-        if let target = appState.switchTargetRate {
-            return "Switching to \(AppState.rateLabel(target))…"
-        }
-        if case .running = appState.status {
-            let codec = appState.trackCodec.map { "\($0) " } ?? ""
-            return "Running · \(codec)\(appState.formatLabel)"
-        }
-        return appState.status.label
-    }
-
-    private var statusColor: Color {
-        if appState.switchTargetRate != nil { return .orange }
-        switch appState.status {
-        case .running: return .green
-        case .waitingForMusic: return .orange
-        case .error: return .red
-        case .disabled: return .secondary
         }
     }
 }
 
+/// Its own view so it can call AppState methods: inside `controls` the name
+/// is shadowed by a @Bindable wrapper, which only vends bindings.
+private struct HistoryButtons: View {
+    @Environment(AppState.self) private var appState
 
+    var body: some View {
+        HStack(spacing: 4) {
+            Button { appState.undo() } label: {
+                Image(systemName: "arrow.uturn.backward")
+            }
+            .keyboardShortcut("z", modifiers: .command)
+            .disabled(!appState.canUndo)
+            .help("Undo (⌘Z)")
+
+            Button { appState.redo() } label: {
+                Image(systemName: "arrow.uturn.forward")
+            }
+            .keyboardShortcut("z", modifiers: [.command, .shift])
+            .disabled(!appState.canRedo)
+            .help("Redo (⇧⌘Z)")
+        }
+    }
+}
+
+private struct PinButton: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        @Bindable var appState = appState
+        Button {
+            appState.settings.panelPinned.toggle()
+        } label: {
+            Image(systemName: appState.settings.panelPinned ? "pin.fill" : "pin")
+                .rotationEffect(.degrees(appState.settings.panelPinned ? 0 : 45))
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(appState.settings.panelPinned ? Color.accentColor : .secondary)
+        .help(appState.settings.panelPinned
+              ? "Panel stays open until you close it"
+              : "Keep the panel open when clicking elsewhere")
+    }
+}
+
+/// Artwork with the track and its format overlaid, so "what is playing" and
+/// "at what quality" read as one thing.
+private struct NowPlayingArtwork: View {
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            Group {
+                if let artwork = appState.nowPlayingArtwork {
+                    Image(nsImage: artwork)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.quaternary.opacity(0.5))
+                }
+            }
+            .frame(width: MenuBarRootView.artworkSize, height: MenuBarRootView.artworkSize)
+            .clipped()
+
+            LinearGradient(colors: [.clear, .black.opacity(0.78)],
+                           startPoint: .center, endPoint: .bottom)
+
+            VStack(alignment: .leading, spacing: 3) {
+                if let title = appState.nowPlayingTitle {
+                    Text(title).font(.headline).lineLimit(2)
+                }
+                if let artist = appState.nowPlayingArtist, !artist.isEmpty {
+                    Text(artist).font(.caption).opacity(0.85).lineLimit(1)
+                }
+                if appState.status == .running {
+                    Text(appState.menuBarSuffix)
+                        .font(.caption2.monospacedDigit())
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(.white.opacity(0.18), in: Capsule())
+                        .padding(.top, 2)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(12)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}

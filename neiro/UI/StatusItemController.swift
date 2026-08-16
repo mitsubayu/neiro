@@ -9,7 +9,6 @@ import os
 @MainActor
 final class StatusItemController: NSObject {
     private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "ui")
-    static let panelWidth: CGFloat = 380
 
     private let appState: AppState
     private let statusItem: NSStatusItem
@@ -99,14 +98,10 @@ final class StatusItemController: NSObject {
         let buttonRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
         let screen = buttonWindow.screen ?? NSScreen.main
 
-        // Sized here, once, so nothing can resize the window while it is open.
-        // A track on screen means the artwork is showing.
-        let wantsArtwork = appState.nowPlayingTitle?.isEmpty == false
-        var height: CGFloat = wantsArtwork ? 760 : 400
-        if let visible = screen?.visibleFrame {
-            height = min(height, visible.height - 24)
-        }
-        panel.setContentSize(NSSize(width: Self.panelWidth, height: height))
+        // Fixed size: the layout is wide rather than tall, so everything fits
+        // without the window ever resizing while it is open.
+        panel.setContentSize(NSSize(width: MenuBarRootView.panelWidth,
+                                    height: MenuBarRootView.panelHeight))
         panel.layoutIfNeeded()
 
         let size = panel.frame.size

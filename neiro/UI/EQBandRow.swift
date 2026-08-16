@@ -1,37 +1,52 @@
 import SwiftUI
 
+/// One line per band with every parameter inline, each slider followed by its
+/// own readout so the numbers are visible while dragging.
 struct EQBandRow: View {
     @Binding var band: EQBand
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Toggle(isOn: $band.isEnabled) {
-                    Text(frequencyLabel)
-                        .font(.caption.monospacedDigit())
-                        .frame(width: 64, alignment: .leading)
-                }
+        HStack(spacing: 6) {
+            Toggle(isOn: $band.isEnabled) { EmptyView() }
                 .toggleStyle(.checkbox)
-                Text(typeLabel).font(.caption2).foregroundStyle(.secondary)
-                Spacer()
-                Text("\(band.gainDB >= 0 ? "+" : "")\(band.gainDB, specifier: "%.1f") dB  Q \(band.q, specifier: "%.2f")")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 8) {
-                LabeledSlider(label: "f", value: logBinding($band.frequency, range: 20...20_000), range: log10(20)...log10(20_000))
-                LabeledSlider(label: "g", value: $band.gainDB, range: -24...24)
-                LabeledSlider(label: "Q", value: logBinding($band.q, range: 0.1...10), range: log10(0.1)...log10(10))
+                .labelsHidden()
+                .help(typeLabel)
+
+            Group {
+                parameter("f", value: logBinding($band.frequency, range: 20...20_000),
+                          range: log10(20)...log10(20_000),
+                          readout: frequencyLabel, readoutWidth: 44)
+                parameter("g", value: $band.gainDB, range: -24...24,
+                          readout: gainLabel, readoutWidth: 34)
+                parameter("Q", value: logBinding($band.q, range: 0.1...10),
+                          range: log10(0.1)...log10(10),
+                          readout: String(format: "%.2f", band.q), readoutWidth: 30)
             }
             .disabled(!band.isEnabled)
-            .opacity(band.isEnabled ? 1 : 0.4)
+            .opacity(band.isEnabled ? 1 : 0.35)
+        }
+    }
+
+    private func parameter(_ label: String, value: Binding<Double>, range: ClosedRange<Double>,
+                           readout: String, readoutWidth: CGFloat) -> some View {
+        HStack(spacing: 3) {
+            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Slider(value: value, in: range).controlSize(.mini)
+            Text(readout)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: readoutWidth, alignment: .trailing)
         }
     }
 
     private var frequencyLabel: String {
         band.frequency >= 1000
-            ? String(format: "%.1f kHz", band.frequency / 1000)
-            : String(format: "%.0f Hz", band.frequency)
+            ? String(format: "%.1fk", band.frequency / 1000)
+            : String(format: "%.0f", band.frequency)
+    }
+
+    private var gainLabel: String {
+        String(format: "%@%.1f", band.gainDB >= 0 ? "+" : "", band.gainDB)
     }
 
     private var typeLabel: String {
@@ -42,24 +57,12 @@ struct EQBandRow: View {
         }
     }
 
+    /// Frequency and Q feel linear to the ear on a log scale, so the sliders
+    /// move in log space and convert back.
     private func logBinding(_ source: Binding<Double>, range: ClosedRange<Double>) -> Binding<Double> {
         Binding(
             get: { log10(source.wrappedValue) },
             set: { source.wrappedValue = min(max(pow(10, $0), range.lowerBound), range.upperBound) }
         )
-    }
-}
-
-private struct LabeledSlider: View {
-    let label: String
-    @Binding var value: Double
-    let range: ClosedRange<Double>
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
-            Slider(value: $value, in: range)
-                .controlSize(.mini)
-        }
     }
 }
