@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Watches Music.app's unified-log output for AudioQueue creation, which
 /// carries the *source* sample rate of the item that just started playing —
@@ -6,6 +7,8 @@ import Foundation
 /// sampleRate:96000, …`. Music does not expose this via any public API;
 /// reading its log is the established technique (same as LosslessSwitcher).
 final class TrackRateDetector {
+    private static let logger = Logger(subsystem: "com.mitsuba.neiro", category: "rate")
+
     /// Called on the main queue with the detected source rate in Hz.
     var onRateDetected: ((Double) -> Void)?
 
@@ -66,6 +69,11 @@ final class TrackRateDetector {
             if let rate = Self.parseSampleRate(fromEventMessage: message) {
                 latestRate = rate
                 latestCodec = Self.parseCodec(fromEventMessage: message) ?? latestCodec
+            } else if Self.isUnrecognizedDecoderLine(message) {
+                // The rate gate is a whitelist of decoder names, so a codec
+                // Apple adds (or renames) would silently stop being followed.
+                // Leave a trail rather than making that a mystery.
+                Self.logger.notice("output format from an unknown decoder — rate ignored: \(message, privacy: .public)")
             } else if let format = Self.parseOutputFormat(fromEventMessage: message) {
                 latestFormat = format
                 latestDecoderCodec = Self.parseDecoderCodec(fromEventMessage: message) ?? latestDecoderCodec
@@ -214,6 +222,14 @@ final class TrackRateDetector {
         // ACCPEDecoderWrapper and friends don't name a format; ignore them
         // rather than guess.
         return nil
+    }
+
+    /// True for an `Output format:` line that names neither a decoder we know
+    /// nor the generic wrapper we deliberately ignore.
+    static func isUnrecognizedDecoderLine(_ message: String) -> Bool {
+        message.contains("Output format:")
+            && parseDecoderCodec(fromEventMessage: message) == nil
+            && !message.contains("CPEDecoderWrapper")
     }
 
     /// Human-readable codec name for the display ("qlac" → "ALAC").

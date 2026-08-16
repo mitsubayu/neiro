@@ -93,6 +93,10 @@ struct BiquadTests {
         // not be treated as the track's format.
         let wrapper = "ACCPEDecoderWrapper.cpp:322   (0xa866b8ba0) Output format:  2 ch,  48000 Hz, Int16, interleaved"
         #expect(TrackRateDetector.parseOutputFormat(fromEventMessage: wrapper) == nil)
+        #expect(!TrackRateDetector.isUnrecognizedDecoderLine(wrapper))
+        #expect(!TrackRateDetector.isUnrecognizedDecoderLine(alac))
+        #expect(TrackRateDetector.isUnrecognizedDecoderLine(
+            "ACFutureCodecDecoder.cpp:12   (0x1) Output format:  2 ch,  352800 Hz, Int32"))
     }
 
     @MainActor
