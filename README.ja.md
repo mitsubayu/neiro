@@ -89,3 +89,8 @@ Apple Development 証明書を自動で使います(`DEVELOPMENT_TEAM=…` で�
 
 MIT — [LICENSE](LICENSE) を参照してください。ただしアプリのアイコンと名称は
 作者の制作物でこの許諾には含みません。fork する場合は差し替えてください。
+
+neiro は独立したプロジェクトです。MusEQ とは提携・推奨関係になく、その派生物でも
+ありません。また Apple とも提携・推奨関係にありません。Apple Music、Apple、macOS は
+Apple Inc. の商標です。製品名は「何と一緒に動くか」「どこから発想を得たか」を
+説明する目的でのみ挙げています。

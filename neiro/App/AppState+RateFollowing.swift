@@ -156,7 +156,7 @@ extension AppState {
     /// - Music idle/paused → retarget silently, no transport commands.
     /// - Near the track head (≤5s) → pause, rebuild at the new rate, seek back
     ///   to 0:00 and resume, so the track restarts cleanly instead of losing
-    ///   its head (the user's complaint with LosslessSwitcher-style behavior).
+    ///   its head, rather than cutting into the music already playing.
     /// - Mid-track (>5s) → this is Music pre-rolling the *next* item at a
     ///   different rate; defer and re-check until the boundary passes.
     private var rateSwitchContext: RateSwitchContext {

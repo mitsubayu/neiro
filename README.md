@@ -92,3 +92,8 @@ name is 音色 (*neiro*), "timbre".
 
 MIT — see [LICENSE](LICENSE). The app icon and the name are the author's own
 work and are not part of that grant; please use your own if you fork this.
+
+neiro is an independent project. It is not affiliated with, endorsed by, or
+derived from MusEQ, and not affiliated with or endorsed by Apple. Apple Music,
+Apple and macOS are trademarks of Apple Inc. Product names are used only to
+say what this software works with and where the idea came from.
