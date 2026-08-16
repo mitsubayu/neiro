@@ -13,6 +13,7 @@ final class SpectrumBackingView: NSView {
     private let analyzer = SpectrumAnalyzer()
     private let window_ = UnsafeMutablePointer<Float>.allocate(capacity: SpectrumTap.fftSize)
     private var timer: Timer?
+    private var occlusionObserver: NSObjectProtocol?
     // Drawing the fill in draw(_:) every frame cost ~5% CPU. A gradient layer
     // masked by a shape layer means each tick only swaps a path and the render
     // server does the rest.
@@ -61,16 +62,42 @@ final class SpectrumBackingView: NSView {
 
     deinit {
         timer?.invalidate()
+        if let occlusionObserver {
+            NotificationCenter.default.removeObserver(occlusionObserver)
+        }
         window_.deallocate()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     /// Capture and animation are tied to being on screen: with the panel
-    /// closed the IO thread doesn't even copy samples.
+    /// hidden the IO thread doesn't even copy samples.
+    ///
+    /// The panel is dismissed with `orderOut`, which leaves the view in its
+    /// window — so viewDidMoveToWindow never fires and, without watching
+    /// occlusion, the analyzer kept running against an invisible panel.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        window != nil ? start() : stop()
+        if let occlusionObserver {
+            NotificationCenter.default.removeObserver(occlusionObserver)
+            self.occlusionObserver = nil
+        }
+        guard let window else {
+            stop()
+            return
+        }
+        occlusionObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeOcclusionStateNotification,
+            object: window, queue: .main
+        ) { [weak self] _ in
+            self?.syncWithVisibility()
+        }
+        syncWithVisibility()
+    }
+
+    private func syncWithVisibility() {
+        let visible = window?.isVisible == true && window?.occlusionState.contains(.visible) == true
+        visible ? start() : stop()
     }
 
     private func start() {
